@@ -1,5 +1,5 @@
 export default {
-  appName: "React Router SaaS Template",
+  appName: "Ara OS",
   breadcrumbNavigation: "breadcrumb",
   notFound: {
     description: "Sorry, we couldn't find the page you're looking for.",

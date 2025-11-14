@@ -138,7 +138,7 @@ export default {
     productReady:
       "Your SaaS product is ready and eager to help you maximize the usage of your time and serve your customers. Say goodbye to tedious set up and hello to just building.",
     thankYou:
-      "Thank you for trusting React Router SaaS Template. Your successful journey towards building and maintaining a SaaS product starts now!",
+      "Thank you for trusting Ara OS. Your successful journey towards building and maintaining a SaaS product starts now!",
   },
   contactSales: {
     company: "Company",
@@ -246,8 +246,7 @@ export default {
     saveAnnually: "Save up to 20% on the annual plan.",
   },
   pricingPage: {
-    pageDescription:
-      "Obviously this template is free. But this is what your pricing could look like.",
+    pageDescription: "Choose the plan that fits your needs.",
     pageTitle: "Pricing",
     pricingHeading: "Choose your plan",
   },

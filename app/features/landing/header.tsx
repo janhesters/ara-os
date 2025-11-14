@@ -18,7 +18,7 @@ export function Header({ className, ...props }: ComponentProps<"header">) {
       )}
       {...props}
     >
-      <div className="container mx-auto flex h-[var(--header-height)] items-center justify-between gap-2 px-4">
+      <div className="container mx-auto flex h-(--header-height) items-center justify-between gap-2 px-4">
         <Link
           className="flex items-center gap-2 self-center font-medium"
           to="/"
@@ -27,9 +27,9 @@ export function Header({ className, ...props }: ComponentProps<"header">) {
             <GalleryVerticalEndIcon className="size-6 sm:size-4" />
           </div>
 
-          <span className="hidden font-mono sm:block">
+          <h1 className="hidden font-mono text-base font-medium sm:block">
             {tCommon("appName")}
-          </span>
+          </h1>
         </Link>
 
         <nav className="flex gap-2 sm:absolute sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2">

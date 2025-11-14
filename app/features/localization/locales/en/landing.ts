@@ -1,35 +1,35 @@
 export default {
   cta: {
     buttons: {
-      primary: "Get started",
-      secondary: "Documentation",
+      primary: "Start free trial",
+      secondary: "Book a demo",
     },
     description:
-      "Set up your project today and start building tomorrow. Save months on setup so you can focus on features.",
-    title: "Launch your SaaS asap.",
+      "Join the new era of AI-powered recruiting. Built by recruiters, for recruiters.",
+    title: "Ready to transform your hiring?",
   },
   description: {
-    eyebrow: "Why use this template?",
+    eyebrow: "Why ara OS?",
     features: [
       {
         description:
-          "TypeScript, ESLint & Prettier, Commitlint and GitHub Actions are all wired up, so your team writes clean, consistent code from day one.",
-        title: "Zero-config tooling.",
+          "Built on 10+ years of deep recruiting expertise. Every workflow, automation, and feature is designed from the ground up to match how recruiters actually work.",
+        title: "Built by recruiters for recruiters",
       },
       {
         description:
-          "Jumping into a template with tens of thousands of lines of code is scary. Complete unit, integration, component and E2E tests (Vitest, React Testing Library & Playwright) let you refactor without fear.",
-        title: "Built with TDD.",
+          "AI agents that work like a team of recruiters. Onboard new roles, map talent markets, and deliver shortlists in minutes—not weeks. Save weeks, not hours.",
+        title: "True agentic AI",
       },
       {
         description:
-          "See real-world patterns for image uploads (client vs. server), MSW-wrapped mocks on both client and server, factory functions and test helpers for easy testing, seamless dark-mode without flicker, Stripe payments integration, authentication, and more.",
-        title: "Learn by example.",
+          "All your tools in one place: calendar, messaging, transcriber, screening, scheduling, and reporting. No more juggling multiple subscriptions.",
+        title: "Unified platform",
       },
       {
         description:
-          "Everything's modular - strip out what you don't need, tweak folder structure, and capture new requirements with tests as you grow.",
-        title: "Fully customizable.",
+          "Either integrate with your current database and tools or replace them entirely. Powerful NLP search, matching algorithms, and analytics accelerate hiring.",
+        title: "Integrate or replace",
       },
     ],
     image: {
@@ -37,49 +37,35 @@ export default {
       light: "Product screenshot (light)",
     },
     subtitle:
-      "When you're launching a SaaS, your biggest advantage is speed. Use this production-ready foundation so you can skip months of setup and dive straight into shipping features.",
-    title: "Focus on your PMF",
+      "The recruiting industry is drowning in fragmented tools and tech fatigue. ara OS is the first true agentic unified recruiting OS—purpose-built to supercharge talent teams, agencies, and founders.",
+    title: "The new era of AI recruiting",
   },
   faq: {
     items: [
       {
         answer:
-          "Yes! This is an open-source project and is free to use under the MIT license. However, some of the integrated services (for example Supabase, Stripe, hosting providers, etc.) may incur their own usage fees, which you are responsible for covering.",
-        question: "Is this free?",
+          "ara OS is perfect for recruiting agencies, freelance recruiters, internal talent teams, and founders. Whether you're a solo recruiter or scaling a team, ara gives you the power of an entire talent organization.",
+        question: "Who is ara OS for?",
       },
       {
         answer:
-          'No. This is an independent, community-maintained, open-source template. It is not sponsored by, affiliated with, or endorsed by Shopify Inc. "React Router" and its logos are trademarks of Shopify Inc., and this project makes no claim of official partnership or endorsement.',
-        question:
-          "Is this template officially supported by or endorsed by Shopify Inc.?",
+          "Unlike traditional ATS or CRM tools, ara OS is built from the ground up as an agentic AI platform. Our AI agents don't just assist—they work like a team of recruiters, handling role onboarding, talent mapping, and shortlist generation autonomously.",
+        question: "How is ara different from other recruiting tools?",
       },
       {
         answer:
-          "Glad you asked! We're always looking for help with the project. If you're interested in contributing, please check out our <1>contributing guide</1> for more information.",
-        links: {
-          contributing:
-            "https://github.com/janhesters/react-router-saas-template/blob/main/CONTRIBUTING.md",
-        },
-        question: "How do I contribute?",
+          "Yes! ara OS is designed to either integrate with your existing tools and databases or completely replace them. Our powerful migration tools ensure a smooth transition with full data enrichment.",
+        question: "Can I migrate my existing candidate database?",
       },
       {
         answer:
-          "You can ask in GitHub discussions. If you're interested in professional help building your app from senior React developers, reach out to us at <1>ReactSquad</1>.",
-        links: {
-          reactsquad: "https://reactsquad.io",
-        },
-        question: "I'm stuck! Where can I get help?",
+          "We offer modular pricing based on the tools you actually use. From solo founders to enterprise agencies, our plans scale with your needs. Contact our team for custom pricing.",
+        question: "What's the pricing model?",
       },
       {
         answer:
-          "Thank you so much! You can follow Jan Hesters on <1>X</1>, <2>LinkedIn</2>, or <3>YouTube</3>, and drop a thank you. And if you know anyone who needs senior React developers, please recommend <4>ReactSquad</4>. Thank you!",
-        links: {
-          linkedin: "https://www.linkedin.com/in/jan-hesters/",
-          reactsquad: "https://reactsquad.io",
-          x: "https://x.com/janhesters",
-          youtube: "https://www.youtube.com/@janhesters",
-        },
-        question: "This is awesome! How can I support you?",
+          "Setup takes less than an hour. Our guided onboarding and intuitive UI mean you can be productive immediately—no lengthy demos or training required. Our Forward Deployed team ensures rapid adoption.",
+        question: "How long does it take to get started?",
       },
     ],
     title: "Frequently asked questions",
@@ -88,69 +74,67 @@ export default {
     cards: [
       {
         description:
-          "Every screen works on desktop, tablet and mobile. So you can serve all customers.",
-        eyebrow: "TailwindCSS & Shadcn",
+          "AI agents autonomously onboard new roles, map entire talent markets, and deliver qualified shortlists in minutes. Resurface candidates you already own and eliminate weeks of manual work.",
+        eyebrow: "Agentic AI",
         image: {
-          dark: "Mobile screenshot (dark)",
-          light: "Mobile screenshot (light)",
+          dark: "AI agents screenshot (dark)",
+          light: "AI agents screenshot (light)",
         },
-        title: "Responsiveness & Accessibility",
+        title: "AI agents that work like recruiters",
       },
       {
         description:
-          "Most SaaS apps charge some form of recurring subscription. This template comes with three tiers preconfigured. But even if your needs are different, this will give you a head start.",
-        eyebrow: "Stripe",
+          "Unified calendar, messaging (email, LinkedIn, WhatsApp), transcriber, screening, and scheduling. All your recruiting tools in one seamless platform—no more subscription overload.",
+        eyebrow: "Unified Platform",
         image: {
-          dark: "Billing (dark)",
-          light: "Billing (light)",
+          dark: "Communications hub (dark)",
+          light: "Communications hub (light)",
         },
-        title: "Billing",
+        title: "All your tools in one place",
       },
       {
         description:
-          "With Supabase Auth (email magic links & Google OAuth), a managed Postgres database, and Supabase Storage, this template takes care of your backend. Storage even offers two upload flows: direct client uploads for large files and server-mediated uploads for small assets like profile avatars.",
-        eyebrow: "Supabase",
+          "Built on proven recruiting frameworks with 10+ years of deep domain expertise. From role intake to offer stage, every workflow is optimized for the AI era.",
+        eyebrow: "Built by recruiters",
         image: {
-          dark: "Authentication (dark)",
-          light: "Authentication (light)",
+          dark: "Pipeline management (dark)",
+          light: "Pipeline management (light)",
         },
-        title: "Authentication & Database",
+        title: "Purpose-built for recruiting",
       },
       {
         description:
-          "This template includes a notifications system supporting text, mentions, and links, complete with read/unread tracking.",
-        image: {
-          dark: "Notifications (dark)",
-          light: "Notifications (light)",
-        },
-        title: "Notifications",
+          "Powerful NLP search, AI-powered matching algorithms, and recruiter copilot. Find the perfect candidate from your database or the entire talent market instantly.",
+        eyebrow: "Smart search",
+        title: "Intelligent candidate matching",
       },
       {
         description:
-          "Built-in cookie-based dark mode prevents flicker on load and respects light, dark, or system settings out of the box.",
-        title: "Dark Mode",
+          "Real-time voice agents for candidate screening, AI interview notetaker that enriches profiles, and automated role matching. Focus on relationships, not admin work.",
+        eyebrow: "Advanced AI",
+        title: "Voice & video AI capabilities",
       },
       {
         description:
-          "Add members via shareable invite links or email invites where you can assign roles - Owner, Admin, or Member - to control access and permissions.",
-        eyebrow: "Multi-tenancy",
-        title: "Member Management",
+          "Submit pre-qualified candidates to all relevant roles across our network. Agencies can monetize their talent pools with split-fee placements.",
+        eyebrow: "ara Marketplace",
+        title: "Decentralized talent marketplace",
       },
       {
         description:
-          "Manage translations, switch languages on the fly, and handle locale-specific formatting (dates, numbers, currencies) without any extra setup.",
-        eyebrow: "React i18next",
-        title: "Internationalization",
+          "As a solo recruiter or founder, deliver enterprise-level candidate experience. ara puts the power of an entire talent organization at your fingertips.",
+        eyebrow: "Scale effortlessly",
+        title: "Built for single-person teams",
       },
       {
         description:
-          "Includes user account settings, sending emails (with Resend), an onboarding flow, and a host of other utilities to help you hit the ground running.",
-        eyebrow: "Miscellaneous",
-        title: "And much more ...",
+          "Full database migration with automated data enrichment. Seamlessly import your existing candidate data and start working immediately.",
+        eyebrow: "Easy migration",
+        title: "Import your existing database",
       },
     ],
     eyebrow: "Features",
-    title: "Everything your SaaS needs",
+    title: "Everything modern recruiting needs",
   },
   footer: {
     madeWithLove: "Made with ❤️ by",
@@ -169,20 +153,19 @@ export default {
     register: "Register",
   },
   hero: {
-    badge: "<1>NOT</1> an official template",
-    cta: {
-      primary: "Get Started",
-      secondary: "Documentation",
-    },
+    announcementBadge: "The first agentic recruiting OS",
+    announcementLink: "Learn more",
+    ctaButton: "Start free trial",
     description:
-      "Save your team months when building B2B & B2C SaaS applications with this <1>free</1> React Router community template.",
+      "The first true agentic unified recruiting OS. Built by recruiters with 10+ years of expertise to supercharge talent teams, agencies, and founders. Save weeks, not hours.",
     image: {
-      dark: "App screenshot (dark)",
-      light: "App screenshot (light)",
+      dark: "ara OS platform screenshot (dark)",
+      light: "ara OS platform screenshot (light)",
     },
-    title: "SaaS Template",
+    secondaryButton: "Book a demo",
+    title: "Hire at lightspeed with AI",
   },
   logos: {
-    title: "The Stack Behind the Template",
+    title: "Trusted by recruiting teams worldwide",
   },
 };

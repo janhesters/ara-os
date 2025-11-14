@@ -27,9 +27,7 @@ describe("AcceptInviteLinkPage component", () => {
     render(<RemixStub initialEntries={[path]} />);
 
     // It renders a greeting.
-    expect(
-      screen.getByText(/welcome to react router saas template/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/welcome to ara os/i)).toBeInTheDocument();
     expect(
       screen.getByText(
         new RegExp(

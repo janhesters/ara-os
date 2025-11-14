@@ -101,7 +101,7 @@ export default {
     save: "Weiter",
     saving: "Wird gespeichert ...",
     subtitle:
-      "Willkommen beim React Router SaaS Template! Bitte erstelle dein Benutzerkonto, um loszulegen.",
+      "Willkommen bei Ara OS! Bitte erstelle dein Benutzerkonto, um loszulegen.",
     title: "Benutzerkonto",
   },
 } satisfies typeof import("../en/onboarding").default;
