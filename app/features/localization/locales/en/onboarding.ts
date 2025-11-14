@@ -98,7 +98,7 @@ export default {
     save: "Continue",
     saving: "Saving ...",
     subtitle:
-      "Welcome to the React Router SaaS template! Please create your user account to get started.",
+      "Welcome to Ara OS! Please create your user account to get started.",
     title: "User account",
   },
 };

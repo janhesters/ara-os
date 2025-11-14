@@ -6,6 +6,7 @@ import {
   SiPostgresql,
   SiPrettier,
   SiPrisma,
+  SiReactrouter,
   SiShadcnui,
   SiSupabase,
   SiTailwindcss,
@@ -15,8 +16,6 @@ import {
 } from "react-icons/si";
 
 import { PlaywrightIcon } from "./svgs/playwright-icon";
-import { RRLockupDarkIcon } from "./svgs/rr-lockup-dark-icon";
-import { RRLockupLightIcon } from "./svgs/rr-lockup-light-icon";
 import { Marquee } from "~/components/magicui/marquee";
 
 export function Logos() {
@@ -32,12 +31,7 @@ export function Logos() {
         <Marquee className="max-w-full">
           {[
             {
-              icon: (
-                <>
-                  <RRLockupDarkIcon className="hidden h-24 w-auto dark:block" />
-                  <RRLockupLightIcon className="block h-24 w-auto dark:hidden" />
-                </>
-              ),
+              icon: <SiReactrouter className="size-16" title="React Router" />,
               key: "react-router",
             },
             {

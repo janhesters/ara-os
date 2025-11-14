@@ -1,13 +1,6 @@
-# Welcome to the React Router SaaS Template!
+# Ara OS
 
-A modern, production-ready template for building full-stack B2B & B2C SaaS
-applications using React Router.
-
-[![YouTbe thumbnail](https://i.ytimg.com/vi/5p45AbpL4bo/maxresdefault.jpg)](https://www.youtube.com/watch?v=5p45AbpL4bo)
-
-You can
-[click here to watch the video](https://www.youtube.com/watch?v=5p45AbpL4bo)
-explaining the template.
+A modern web application built with React Router and Bun.
 
 ## Tech Stack
 
@@ -43,24 +36,20 @@ explaining the template.
   [remix-i18next](https://github.com/sergiodxa/remix-i18next)
 - 📦 And much more...
 
-All the services this template uses have generous free tiers, so you can get
+All the services used have generous free tiers, so you can get
 started at any budget.
 
 ## General
 
-This template is tens of thousands of lines of code. It can be scary to navigate
-such a big foreign project. Luckily this template has good test coverage.
-
-Why is good test coverage important for a template? For the same reason why it's
-good for your own code base. You want to avoid accidentally breaking something
-when you update the template and change or ammend its code.
+This project has extensive test coverage to ensure reliability and ease of maintenance.
+Good test coverage helps avoid accidentally breaking functionality when updating or modifying code.
 
 ## Getting Started
 
-Get the code:
+This project uses [Bun](https://bun.sh/) as the package manager and Javascript runtime. So, you need to install Bun globally:
 
-```bash
-npx create-react-router@latest --template janhesters/react-router-saas-template
+```sh
+curl -fsSL https://bun.sh/install | bash
 ```
 
 ### Installation
@@ -68,7 +57,7 @@ npx create-react-router@latest --template janhesters/react-router-saas-template
 Install the dependencies:
 
 ```bash
-npm install
+bun install
 ```
 
 For a quick start, see ["Local Development with Mocks"](#local-development-with-mocks). Just copy `.env.example` to `.env` and start developing.
@@ -153,7 +142,7 @@ Sign Up** (under
 the Supabase Dashboard.
 
 ```html
-<h2>Create Your Account For The React Router Starter App</h2>
+<h2>Create Your Account For Ara OS</h2>
 
 <p>Follow this link to register:</p>
 <p>
@@ -170,7 +159,7 @@ Link** (under
 the Supabase Dashboard.
 
 ```html
-<h2>Log In To The React Router Starter App</h2>
+<h2>Log In To Ara OS</h2>
 
 <p>Follow this link to login:</p>
 <p>
@@ -339,7 +328,7 @@ For each price, set the "Product tax code" to "SaaS" and the "Unit label" to
 
 #### 1. Create your products & prices
 
-The React Router SaaS Template is set up to listen to product & prices webhooks.
+Ara OS is set up to listen to product & prices webhooks.
 This also allows your account managers to create and manage products & prices in
 the Stripe Dashboard, and have them automatically reflected in your app.
 
@@ -505,8 +494,7 @@ subscription via the portal.
 
 Here are a few miscellaneous things you might want to change:
 
-1. Give it your own name! Fuzzy search for `React Router SaaS Template` to find
-   all the places you need to change the name.
+1. Customize it for your needs! The application is now branded as Ara OS.
 2. The current theme violates color contrast. It's best for you to pick a theme
    that is accessible and configure it in your `app.css` file. Then you can
    enable contrast checks in your E2E tests again.
@@ -710,14 +698,14 @@ This template uses [flat routes](https://github.com/kiliman/remix-flat-routes).
 
 ### i18n
 
-This React Router SaaS template comes with localization support through
+Ara OS comes with localization support through
 [remix-i18next](https://github.com/sergiodxa/remix-i18next).
 
 The namespaces live in `public/locales/`.
 
 ### Toasts
 
-This React Router SaaS template includes utilities for toast notifications based
+Ara OS includes utilities for toast notifications based
 on flash sessions.
 
 **Flash Data:** Temporary session values, ideal for transferring data to the

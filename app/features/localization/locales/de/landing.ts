@@ -1,35 +1,35 @@
 export default {
   cta: {
     buttons: {
-      primary: "Jetzt starten",
-      secondary: "Dokumentation",
+      primary: "Kostenlose Testversion starten",
+      secondary: "Demo buchen",
     },
     description:
-      "Richte dein Projekt heute ein und beginne morgen mit der Entwicklung. Spare Monate bei der Einrichtung, damit du dich auf Features konzentrieren kannst.",
-    title: "Starte dein SaaS so schnell wie möglich.",
+      "Tritt der neuen Ära des KI-gestützten Recruitings bei. Von Recruitern gebaut, für Recruiter.",
+    title: "Bereit, deine Einstellungen zu transformieren?",
   },
   description: {
-    eyebrow: "Warum dieses Template verwenden?",
+    eyebrow: "Warum ara OS?",
     features: [
       {
         description:
-          "TypeScript, ESLint & Prettier, Commitlint und GitHub Actions sind alle eingerichtet, damit dein Team von Tag eins an sauberen, konsistenten Code schreibt.",
-        title: "Werkzeuge ohne Konfiguration.",
+          "Basierend auf 10+ Jahren tiefgehender Recruiting-Expertise. Jeder Workflow, jede Automatisierung und jede Funktion ist von Grund auf so gestaltet, wie Recruiter tatsächlich arbeiten.",
+        title: "Von Recruitern für Recruiter gebaut",
       },
       {
         description:
-          "In ein Template mit Zehntausenden von Codezeilen einzusteigen ist beängstigend. Vollständige Unit-, Integrations-, Komponenten- und E2E-Tests (Vitest, React Testing Library & Playwright) lassen dich ohne Angst refaktorieren.",
-        title: "Mit TDD entwickelt.",
+          "KI-Agenten, die wie ein Team von Recruitern arbeiten. Onboarding neuer Rollen, Kartierung von Talentmärkten und Lieferung von Shortlists in Minuten—nicht Wochen. Spare Wochen, nicht Stunden.",
+        title: "Echte agentische KI",
       },
       {
         description:
-          "Sieh dir reale Muster für Bild-Uploads (Client vs. Server), MSW-umhüllte Mocks auf Client und Server, Factory-Funktionen und Test-Helfer für einfaches Testen, nahtlosen Dark-Mode ohne Flackern, Stripe-Zahlungsintegration, Authentifizierung und mehr an.",
-        title: "Lerne durch Beispiele.",
+          "Alle deine Tools an einem Ort: Kalender, Messaging, Transkription, Screening, Planung und Reporting. Keine Jonglage mehr mit mehreren Abonnements.",
+        title: "Einheitliche Plattform",
       },
       {
         description:
-          "Alles ist modular - entferne, was du nicht brauchst, passe die Ordnerstruktur an und erfasse neue Anforderungen mit Tests, während du wächst.",
-        title: "Vollständig anpassbar.",
+          "Entweder Integration mit deiner aktuellen Datenbank und Tools oder kompletter Ersatz. Leistungsstarke NLP-Suche, Matching-Algorithmen und Analysen beschleunigen die Einstellung.",
+        title: "Integrieren oder ersetzen",
       },
     ],
     image: {
@@ -37,49 +37,35 @@ export default {
       light: "Produkt-Screenshot (hell)",
     },
     subtitle:
-      "Wenn du ein SaaS startest, ist dein größter Vorteil Geschwindigkeit. Nutze diese produktionsreife Grundlage, damit du Monate der Einrichtung überspringen und direkt mit dem Ausliefern von Features beginnen kannst.",
-    title: "Fokussiere dich auf dein PMF",
+      "Die Recruiting-Branche ertrinkt in fragmentierten Tools und Tech-Müdigkeit. ara OS ist das erste echte agentische, einheitliche Recruiting-OS—speziell entwickelt, um Talent-Teams, Agenturen und Gründer zu stärken.",
+    title: "Die neue Ära des KI-Recruitings",
   },
   faq: {
     items: [
       {
         answer:
-          "Ja! Dies ist ein Open-Source-Projekt und kann kostenlos unter der MIT-Lizenz genutzt werden. Einige der integrierten Dienste (zum Beispiel Supabase, Stripe, Hosting-Anbieter usw.) können jedoch eigene Nutzungsgebühren verursachen, für die du verantwortlich bist.",
-        question: "Ist das kostenlos?",
+          "ara OS ist perfekt für Recruiting-Agenturen, freiberufliche Recruiter, interne Talent-Teams und Gründer. Egal, ob du ein Solo-Recruiter bist oder ein Team skalierst, ara gibt dir die Kraft einer ganzen Talent-Organisation.",
+        question: "Für wen ist ara OS?",
       },
       {
         answer:
-          'Nein. Dies ist ein unabhängiges, von der Community gepflegtes Open-Source-Template. Es wird nicht von Shopify Inc. gesponsert, ist nicht mit ihnen verbunden oder wird von ihnen unterstützt. "React Router" und seine Logos sind Marken von Shopify Inc., und dieses Projekt erhebt keinen Anspruch auf eine offizielle Partnerschaft oder Unterstützung.',
-        question:
-          "Wird dieses Template offiziell von Shopify Inc. unterstützt oder befürwortet?",
+          "Im Gegensatz zu traditionellen ATS- oder CRM-Tools ist ara OS von Grund auf als agentische KI-Plattform gebaut. Unsere KI-Agenten assistieren nicht nur—sie arbeiten wie ein Team von Recruitern und übernehmen Role-Onboarding, Talent-Mapping und Shortlist-Generierung autonom.",
+        question: "Wie unterscheidet sich ara von anderen Recruiting-Tools?",
       },
       {
         answer:
-          "Schön, dass du fragst! Wir suchen immer nach Hilfe für das Projekt. Wenn du daran interessiert bist, beizutragen, schau dir bitte unseren <1>Leitfaden für Mitwirkende</1> an.",
-        links: {
-          contributing:
-            "https://github.com/janhesters/react-router-saas-template/blob/main/CONTRIBUTING.md",
-        },
-        question: "Wie kann ich beitragen?",
+          "Ja! ara OS ist so konzipiert, dass es entweder mit deinen bestehenden Tools und Datenbanken integriert oder sie vollständig ersetzt. Unsere leistungsstarken Migrations-Tools gewährleisten einen reibungslosen Übergang mit vollständiger Datenanreicherung.",
+        question: "Kann ich meine bestehende Kandidaten-Datenbank migrieren?",
       },
       {
         answer:
-          "Du kannst in den GitHub-Diskussionen fragen. Wenn du an professioneller Hilfe beim Aufbau deiner App von erfahrenen React-Entwicklern interessiert bist, wende dich an <1>ReactSquad</1>.",
-        links: {
-          reactsquad: "https://reactsquad.io",
-        },
-        question: "Ich stecke fest! Wo kann ich Hilfe bekommen?",
+          "Wir bieten modulare Preise basierend auf den Tools, die du tatsächlich nutzt. Von Solo-Gründern bis zu Enterprise-Agenturen skalieren unsere Pläne mit deinen Bedürfnissen. Kontaktiere unser Team für individuelle Preise.",
+        question: "Was ist das Preismodell?",
       },
       {
         answer:
-          "Vielen Dank! Du kannst Jan Hesters auf <1>X</1>, <2>LinkedIn</2> oder <3>YouTube</3> folgen und ein Dankeschön hinterlassen. Und wenn du jemanden kennst, der erfahrene React-Entwickler braucht, empfiehl bitte <4>ReactSquad</4>. Vielen Dank!",
-        links: {
-          linkedin: "https://www.linkedin.com/in/jan-hesters/",
-          reactsquad: "https://reactsquad.io",
-          x: "https://x.com/janhesters",
-          youtube: "https://www.youtube.com/@janhesters",
-        },
-        question: "Das ist großartig! Wie kann ich dich unterstützen?",
+          "Die Einrichtung dauert weniger als eine Stunde. Unser geführtes Onboarding und die intuitive Benutzeroberfläche bedeuten, dass du sofort produktiv sein kannst—keine langwierigen Demos oder Schulungen erforderlich. Unser Forward Deployed Team sorgt für schnelle Akzeptanz.",
+        question: "Wie lange dauert es, loszulegen?",
       },
     ],
     title: "Häufig gestellte Fragen",
@@ -88,69 +74,67 @@ export default {
     cards: [
       {
         description:
-          "Jeder Bildschirm funktioniert auf Desktop, Tablet und Mobilgerät. So kannst du alle Kunden bedienen.",
-        eyebrow: "TailwindCSS & Shadcn",
+          "KI-Agenten übernehmen autonom das Onboarding neuer Rollen, kartieren ganze Talentmärkte und liefern qualifizierte Shortlists in Minuten. Entdecke Kandidaten neu, die du bereits kennst, und eliminiere Wochen manueller Arbeit.",
+        eyebrow: "Agentische KI",
         image: {
-          dark: "Mobil-Screenshot (dunkel)",
-          light: "Mobil-Screenshot (hell)",
+          dark: "KI-Agenten Screenshot (dunkel)",
+          light: "KI-Agenten Screenshot (hell)",
         },
-        title: "Responsivität & Barrierefreiheit",
+        title: "KI-Agenten, die wie Recruiter arbeiten",
       },
       {
         description:
-          "Die meisten SaaS-Apps erheben eine Form von wiederkehrendem Abonnement. Dieses Template kommt mit drei vorkonfigurierten Stufen. Aber selbst wenn deine Bedürfnisse anders sind, gibt dir dies einen Vorsprung.",
-        eyebrow: "Stripe",
+          "Einheitlicher Kalender, Messaging (E-Mail, LinkedIn, WhatsApp), Transkription, Screening und Planung. Alle deine Recruiting-Tools in einer nahtlosen Plattform—keine Abonnement-Überflutung mehr.",
+        eyebrow: "Einheitliche Plattform",
         image: {
-          dark: "Abrechnung (dunkel)",
-          light: "Abrechnung (hell)",
+          dark: "Kommunikations-Hub (dunkel)",
+          light: "Kommunikations-Hub (hell)",
         },
-        title: "Abrechnung",
+        title: "Alle Tools an einem Ort",
       },
       {
         description:
-          "Mit Supabase Auth (E-Mail Magic Links & Google OAuth), einer verwalteten Postgres-Datenbank und Supabase Storage kümmert sich dieses Template um dein Backend. Storage bietet sogar zwei Upload-Flows: direkte Client-Uploads für große Dateien und server-vermittelte Uploads für kleine Assets wie Profilavatare.",
-        eyebrow: "Supabase",
+          "Basierend auf bewährten Recruiting-Frameworks mit 10+ Jahren tiefgehender Domain-Expertise. Von der Rollenaufnahme bis zum Angebot ist jeder Workflow für die KI-Ära optimiert.",
+        eyebrow: "Von Recruitern gebaut",
         image: {
-          dark: "Authentifizierung (dunkel)",
-          light: "Authentifizierung (hell)",
+          dark: "Pipeline-Management (dunkel)",
+          light: "Pipeline-Management (hell)",
         },
-        title: "Authentifizierung & Datenbank",
+        title: "Speziell für Recruiting entwickelt",
       },
       {
         description:
-          "Dieses Template enthält ein Benachrichtigungssystem, das Text, Erwähnungen und Links unterstützt, komplett mit Gelesen/Ungelesen-Tracking.",
-        image: {
-          dark: "Benachrichtigungen (dunkel)",
-          light: "Benachrichtigungen (hell)",
-        },
-        title: "Benachrichtigungen",
+          "Leistungsstarke NLP-Suche, KI-gestützte Matching-Algorithmen und Recruiter-Copilot. Finde den perfekten Kandidaten aus deiner Datenbank oder dem gesamten Talentmarkt sofort.",
+        eyebrow: "Intelligente Suche",
+        title: "Intelligentes Kandidaten-Matching",
       },
       {
         description:
-          "Der integrierte Cookie-basierte Dark Mode verhindert Flackern beim Laden und respektiert standardmäßig helle, dunkle oder Systemeinstellungen.",
-        title: "Dark Mode",
+          "Echtzeit-Sprach-Agenten für Kandidaten-Screening, KI-Interview-Notetaker zur Profilanreicherung und automatisches Rollen-Matching. Fokussiere dich auf Beziehungen, nicht auf Admin-Arbeit.",
+        eyebrow: "Erweiterte KI",
+        title: "Sprach- & Video-KI-Funktionen",
       },
       {
         description:
-          "Füge Mitglieder über teilbare Einladungslinks oder E-Mail-Einladungen hinzu, bei denen du Rollen zuweisen kannst - Owner, Admin oder Member - um Zugriff und Berechtigungen zu steuern.",
-        eyebrow: "Multi-Tenancy",
-        title: "Mitgliederverwaltung",
+          "Reiche vorqualifizierte Kandidaten für alle relevanten Rollen in unserem Netzwerk ein. Agenturen können ihre Talent-Pools mit geteilten Vermittlungsgebühren monetarisieren.",
+        eyebrow: "ara Marketplace",
+        title: "Dezentraler Talent-Marktplatz",
       },
       {
         description:
-          "Verwalte Übersetzungen, wechsle Sprachen im laufenden Betrieb und handhabe gebietsspezifische Formatierung (Daten, Zahlen, Währungen) ohne zusätzliche Einrichtung.",
-        eyebrow: "React i18next",
-        title: "Internationalisierung",
+          "Als Solo-Recruiter oder Gründer lieferst du Kandidaten-Erfahrung auf Enterprise-Niveau. ara gibt dir die Kraft einer ganzen Talent-Organisation zur Hand.",
+        eyebrow: "Müheloses Skalieren",
+        title: "Gebaut für Ein-Personen-Teams",
       },
       {
         description:
-          "Enthält Benutzerkontoeinstellungen, E-Mail-Versand (mit Resend), einen Onboarding-Flow und eine Vielzahl anderer Hilfsprogramme, die dir helfen, sofort loszulegen.",
-        eyebrow: "Verschiedenes",
-        title: "Und vieles mehr ...",
+          "Vollständige Datenbank-Migration mit automatisierter Datenanreicherung. Importiere nahtlos deine bestehenden Kandidatendaten und beginne sofort zu arbeiten.",
+        eyebrow: "Einfache Migration",
+        title: "Importiere deine bestehende Datenbank",
       },
     ],
     eyebrow: "Features",
-    title: "Alles, was dein SaaS braucht",
+    title: "Alles, was modernes Recruiting braucht",
   },
   footer: {
     madeWithLove: "Gemacht mit ❤️ von",
@@ -169,20 +153,19 @@ export default {
     register: "Registrieren",
   },
   hero: {
-    badge: "<1>KEIN</1> offizielles Template",
-    cta: {
-      primary: "Jetzt starten",
-      secondary: "Dokumentation",
-    },
+    announcementBadge: "Das erste agentische Recruiting-OS",
+    announcementLink: "Mehr erfahren",
+    ctaButton: "Kostenlose Testversion starten",
     description:
-      "Spare deinem Team Monate beim Aufbau von B2B & B2C SaaS-Anwendungen mit diesem <1>kostenlosen</1> React Router Community-Template.",
+      "Das erste echte agentische, einheitliche Recruiting-OS. Von Recruitern mit 10+ Jahren Expertise gebaut, um Talent-Teams, Agenturen und Gründer zu stärken. Spare Wochen, nicht Stunden.",
     image: {
-      dark: "App-Screenshot (dunkel)",
-      light: "App-Screenshot (hell)",
+      dark: "ara OS Plattform Screenshot (dunkel)",
+      light: "ara OS Plattform Screenshot (hell)",
     },
-    title: "SaaS Template",
+    secondaryButton: "Demo buchen",
+    title: "Mit KI in Lichtgeschwindigkeit einstellen",
   },
   logos: {
-    title: "Der Stack hinter dem Template",
+    title: "Vertraut von Recruiting-Teams weltweit",
   },
 } satisfies typeof import("../en/landing").default;

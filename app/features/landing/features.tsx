@@ -141,14 +141,14 @@ export function Features() {
         <BentoCard>
           <BentoCardMedia>
             <img
-              alt={cards[3].image?.light}
+              alt={cards[3].title}
               className={cn("rounded-t-lg", "dark:hidden")}
               src="/images/notifications-light.png"
               style={imageFadeStyle}
             />
 
             <img
-              alt={cards[3].image?.dark}
+              alt={cards[3].title}
               className={cn("rounded-t-lg", "hidden dark:block")}
               src="/images/notifications-dark.png"
               style={imageFadeStyle}
