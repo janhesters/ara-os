@@ -1,39 +1,4 @@
 {
-  "name": "ara-os",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "build": "react-router build",
-    "check": "biome check --write .",
-    "dev": "react-router dev",
-    "dev:mocks": "cross-env MOCKS=true npm run dev",
-    "lint": "biome ci --css-parse-tailwind-directives=true .",
-    "prepare": "husky",
-    "prisma:deploy": "npx prisma migrate deploy && npx prisma generate",
-    "prisma:migrate": "npx prisma migrate dev --name",
-    "prisma:push": "npx prisma db push && npx prisma generate",
-    "prisma:reset-dev": "npm run prisma:wipe && npm run prisma:seed && npm run dev",
-    "prisma:seed": "tsx ./prisma/seed.ts",
-    "prisma:setup": "prisma generate && prisma migrate deploy && prisma db push",
-    "prisma:studio": "npx prisma studio",
-    "prisma:wipe": "npx prisma migrate reset --force && npx prisma db push",
-    "start": "react-router-serve ./build/server/index.js",
-    "start:mocks": "cross-env MOCKS=true npm run start",
-    "stripe:resend-events": "xargs -n1 stripe events resend < stripe-events.txt",
-    "test": "vitest --reporter=verbose --run",
-    "test:e2e": "npx playwright test",
-    "test:e2e:ui": "npx playwright test --ui",
-    "test:watch": "vitest --reporter=verbose",
-    "typecheck": "npm run typegen && tsc",
-    "typegen": "npm run typegen:router && npm run typegen:prisma",
-    "typegen:prisma": "prisma generate",
-    "typegen:router": "react-router typegen"
-  },
-  "lint-staged": {
-    "*.{js,jsx,ts,tsx,json,css,md}": [
-      "biome check --write --unsafe"
-    ]
-  },
   "config": {
     "commitizen": {
       "path": "cz-conventional-changelog"
@@ -128,5 +93,40 @@
     "vite-tsconfig-paths": "5.1.4",
     "vitest": "4.0.9"
   },
-  "packageManager": "npm@11.6.2"
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,css,md}": [
+      "biome check --write --unsafe"
+    ]
+  },
+  "name": "ara-os",
+  "packageManager": "npm@11.6.2",
+  "private": true,
+  "scripts": {
+    "build": "react-router build",
+    "check": "biome check --write .",
+    "dev": "react-router dev",
+    "dev:mocks": "cross-env MOCKS=true npm run dev",
+    "lint": "biome ci --css-parse-tailwind-directives=true .",
+    "prepare": "husky",
+    "prisma:deploy": "npx prisma migrate deploy && npx prisma generate",
+    "prisma:migrate": "npx prisma migrate dev --name",
+    "prisma:push": "npx prisma db push && npx prisma generate",
+    "prisma:reset-dev": "npm run prisma:wipe && npm run prisma:seed && npm run dev",
+    "prisma:seed": "tsx ./prisma/seed.ts",
+    "prisma:setup": "prisma generate && prisma migrate deploy && prisma db push",
+    "prisma:studio": "npx prisma studio",
+    "prisma:wipe": "npx prisma migrate reset --force && npx prisma db push",
+    "start": "react-router-serve ./build/server/index.js",
+    "start:mocks": "cross-env MOCKS=true npm run start",
+    "stripe:resend-events": "xargs -n1 stripe events resend < stripe-events.txt",
+    "test": "vitest --reporter=verbose --run",
+    "test:e2e": "npx playwright test",
+    "test:e2e:ui": "npx playwright test --ui",
+    "test:watch": "vitest --reporter=verbose",
+    "typecheck": "npm run typegen && tsc",
+    "typegen": "npm run typegen:router && npm run typegen:prisma",
+    "typegen:prisma": "prisma generate",
+    "typegen:router": "react-router typegen"
+  },
+  "type": "module"
 }
