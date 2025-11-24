@@ -17,79 +17,8 @@ permissions:
 
 jobs:
   lint:
-    name: ⬣ Biome Lint
+    name: ⬣ Biome
     runs-on: ubuntu-latest
-    steps:
-      - name: ⬇️ Checkout repo
-        uses: actions/checkout@v4
-
-      - name: 🥟 Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: 📥 Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: 🔬 Lint
-        run: bun run lint
-
-  commitlint:
-    name: ⚙️ Commitlint
-    runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'pull_request' && github.actor != 'dependabot[bot]' }}
-    steps:
-      - name: ⬇️ Checkout repo
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: 🥟 Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: 📥 Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: ⚙️ Run commitlint
-        run: bunx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.sha }} --verbose
-
-  typecheck:
-    name: ʦ TypeScript
-    runs-on: ubuntu-latest
-    steps:
-      - name: ⬇️ Checkout repo
-        uses: actions/checkout@v4
-
-      - name: 🥟 Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: 📥 Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: 🔎 Type check
-        run: bun run typecheck
-
-  test:
-    name: ⚡ Vitest
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:latest
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: postgres
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
     steps:
       - name: ⬇️ Checkout repo
         uses: actions/checkout@v4
@@ -105,16 +34,51 @@ jobs:
       - name: 🏄 Copy test env vars
         run: cp .env.example .env
 
-      - name: 🛠️ Setup Database
-        run: bun run prisma:wipe
+      - name: 🛠️ Typegen
+        run: bun run typegen
 
-      - name: ⚡ Run tests
-        run: bun run test
+      - name: 🔬 Lint
+        run: bun run lint
 
-  playwright:
-    name: 🎭 Playwright
+  type-check:
+    name: ʦ TypeScript
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    steps:
+      - name: ⬇️ Checkout repo
+        uses: actions/checkout@v4
+
+      - name: 🥟 Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: 📥 Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: 🏄 Copy test env vars
+        run: cp .env.example .env
+
+      - name: 🔎 Type check
+        run: bun run typecheck
+
+  commitlint:
+    name: ⚙️ commitlint
+    runs-on: ubuntu-latest
+    if: github.actor != 'dependabot[bot]'
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: ⬇️ Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: ⚙️ commitlint
+        uses: wagoid/commitlint-github-action@v6
+
+  vitest:
+    name: ⚡ Vitest
+    runs-on: ubuntu-latest
     services:
       postgres:
         image: postgres:latest
@@ -122,13 +86,50 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: postgres
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
         ports:
           - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 10s
+          --health-timeout 5s --health-retries 5
+    steps:
+      - name: ⬇️ Checkout repo
+        uses: actions/checkout@v4
+
+      - name: 🥟 Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: 📥 Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: 🏄 Copy test env vars
+        run: cp .env.example .env
+
+      - name: 🛠 Setup Database
+        run: bun run prisma:wipe
+
+      - name: 🛠️ Typegen
+        run: bun run typegen
+
+      - name: ⚡ Run vitest
+        run: bun run test -- --coverage
+
+  playwright-chrome:
+    name: 🎭 Playwright Chrome
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 10s
+          --health-timeout 5s --health-retries 5
     steps:
       - name: ⬇️ Checkout repo
         uses: actions/checkout@v4
@@ -147,16 +148,19 @@ jobs:
       - name: 🌐 Install Playwright Browsers
         run: bunx playwright install --with-deps chromium
 
-      - name: 🛠️ Setup Database
+      - name: 🛠 Setup Database
         run: bun run prisma:wipe
+
+      - name: 🛠️ Typegen
+        run: bun run typegen
 
       - name: 🏗️ Build Application
         run: bun run build
 
-      - name: 🎭 Playwright Run
-        run: bun run test:e2e
+      - name: 🎭 Playwright Run Chrome
+        run: bunx playwright test --project=chromium
 
-      - name: 📊 Upload report
+      - name: 📸 Playwright Screenshots
         uses: actions/upload-artifact@v4
         if: failure()
         with:
