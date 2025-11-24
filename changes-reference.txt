@@ -1,0 +1,4683 @@
+Commit: 97ec413c32a37aebe116f8528b118c8a83b2a291
+Author: Jan <jan.hesters@rwth-aachen.de>
+Date: 2025-11-24 14:47:15
+Message: chore(packages): upgrade all packages
+
+
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index 658026a..dc6f13e 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -32,6 +32,9 @@ jobs:
+       - name: 📥 Install dependencies
+         run: npm ci
+ 
++      - name: 🏄 Copy test env vars
++        run: cp .env.example .env
++
+       - name: 🛠️ Typegen
+         run: npm run typegen
+ 
+@@ -54,6 +57,9 @@ jobs:
+       - name: 📥 Install dependencies
+         run: npm ci
+ 
++      - name: 🏄 Copy test env vars
++        run: cp .env.example .env
++
+       - name: 🔎 Type check
+         run: npm run typecheck
+ 
+@@ -105,6 +111,9 @@ jobs:
+       - name: 🛠 Setup Database
+         run: npm run prisma:wipe
+ 
++      - name: 🛠️ Typegen
++        run: npm run typegen
++
+       - name: ⚡ Run vitest
+         run: npm run test -- --coverage
+ 
+@@ -145,6 +154,9 @@ jobs:
+       - name: 🛠 Setup Database
+         run: npm run prisma:wipe
+ 
++      - name: 🛠️ Typegen
++        run: npm run typegen
++
+       - name: 🏗️ Build Application (with mocks)
+         run: npm run build
+ 
+diff --git a/.gitignore b/.gitignore
+index 2492c4f..bf57516 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -25,3 +25,6 @@ stripe-events.txt
+ # Test fixtures
+ /tests/fixtures/
+ /app/tests/mocks/fixtures/
++
++# Prisma
++/app/generated/
+diff --git a/app/features/billing/billing-action.server.ts b/app/features/billing/billing-action.server.ts
+index b10ea7c..bbf4aa9 100644
+--- a/app/features/billing/billing-action.server.ts
++++ b/app/features/billing/billing-action.server.ts
+@@ -1,4 +1,3 @@
+-import { OrganizationMembershipRole } from "@prisma/client";
+ import { data, redirect } from "react-router";
+ import { z } from "zod";
+ 
+@@ -40,6 +39,7 @@ import { updateStripeSubscriptionInDatabaseById } from "./stripe-subscription-mo
+ import { deleteStripeSubscriptionScheduleFromDatabaseById } from "./stripe-subscription-schedule-model.server";
+ import type { Route } from ".react-router/types/app/routes/_authenticated-routes+/organizations_+/$organizationSlug+/settings+/+types/billing";
+ import { getInstance } from "~/features/localization/i18next-middleware.server";
++import { OrganizationMembershipRole } from "~/generated/client";
+ import { combineHeaders } from "~/utils/combine-headers.server";
+ import { getIsDataWithResponseInit } from "~/utils/get-is-data-with-response-init.server";
+ import { requestToUrl } from "~/utils/get-search-parameter-from-request.server";
+diff --git a/app/features/billing/billing-factories.server.ts b/app/features/billing/billing-factories.server.ts
+index fbe4e6d..ae34f05 100644
+--- a/app/features/billing/billing-factories.server.ts
++++ b/app/features/billing/billing-factories.server.ts
+@@ -1,5 +1,7 @@
+ import { faker } from "@faker-js/faker";
+ import { createId } from "@paralleldrive/cuid2";
++
++import { allLookupKeys, allTiers } from "./billing-constants";
+ import type {
+   StripePrice,
+   StripeProduct,
+@@ -7,10 +9,8 @@ import type {
+   StripeSubscriptionItem,
+   StripeSubscriptionSchedule,
+   StripeSubscriptionSchedulePhase,
+-} from "@prisma/client";
+-import { StripePriceInterval } from "@prisma/client";
+-
+-import { allLookupKeys, allTiers } from "./billing-constants";
++} from "~/generated/client";
++import { StripePriceInterval } from "~/generated/client";
+ import type { DeepPartial, Factory } from "~/utils/types";
+ 
+ export const getRandomTier = () => faker.helpers.arrayElement(allTiers);
+diff --git a/app/features/billing/billing-helpers.server.test.ts b/app/features/billing/billing-helpers.server.test.ts
+index d1a99d6..4b9ff11 100644
+--- a/app/features/billing/billing-helpers.server.test.ts
++++ b/app/features/billing/billing-helpers.server.test.ts
+@@ -1,4 +1,3 @@
+-import { StripePriceInterval } from "@prisma/client";
+ import { describe, expect, test } from "vitest";
+ 
+ import {
+@@ -21,6 +20,7 @@ import {
+   mapStripeSubscriptionDataToBillingPageProps,
+ } from "./billing-helpers.server";
+ import type { BillingPageProps } from "./billing-page";
++import { StripePriceInterval } from "~/generated/client";
+ 
+ describe.skipIf(!!process.env.CI)(
+   "mapStripeSubscriptionDataToBillingPageProps()",
+diff --git a/app/features/billing/billing-helpers.server.ts b/app/features/billing/billing-helpers.server.ts
+index ca507ef..2ef617a 100644
+--- a/app/features/billing/billing-helpers.server.ts
++++ b/app/features/billing/billing-helpers.server.ts
+@@ -1,5 +1,3 @@
+-import { StripeSubscriptionStatus } from "@prisma/client";
+-
+ import type { OrganizationWithMembershipsAndSubscriptions } from "../onboarding/onboarding-helpers.server";
+ import type { Interval, Tier } from "./billing-constants";
+ import type { StripeSubscriptionSchedulePhaseWithPrice } from "./billing-factories.server";
+@@ -9,6 +7,7 @@ import type { CancelOrModifySubscriptionModalContentProps } from "./cancel-or-mo
+ import type { CreateSubscriptionModalContentProps } from "./create-subscription-modal-content";
+ import type { retrieveProductsFromDatabaseByPriceLookupKeys } from "./stripe-product-model.server";
+ import type { retrieveLatestStripeSubscriptionWithActiveScheduleAndPhasesByOrganizationId } from "./stripe-subscription-model.server";
++import { StripeSubscriptionStatus } from "~/generated/client";
+ 
+ const cancellableSubscriptionStatuses: StripeSubscriptionStatus[] = [
+   StripeSubscriptionStatus.active,
+diff --git a/app/features/billing/billing-helpers.test.ts b/app/features/billing/billing-helpers.test.ts
+index 149d5fd..e597e8d 100644
+--- a/app/features/billing/billing-helpers.test.ts
++++ b/app/features/billing/billing-helpers.test.ts
+@@ -15,13 +15,12 @@ describe("getTierAndIntervalForLookupKey()", () => {
+     [priceLookupKeysByTierAndInterval.high.annual, "high", "annual"],
+   ];
+ 
+-  test.each(validCases)(
+-    'given lookupKey="%s", returns { tier: "%s", interval: "%s" }',
+-    (lookupKey, tier, interval) => {
+-      const actual = getTierAndIntervalForLookupKey(lookupKey);
+-      expect(actual).toEqual({ interval, tier });
+-    },
+-  );
++  test.each(
++    validCases,
++  )('given lookupKey="%s", returns { tier: "%s", interval: "%s" }', (lookupKey, tier, interval) => {
++    const actual = getTierAndIntervalForLookupKey(lookupKey);
++    expect(actual).toEqual({ interval, tier });
++  });
+ 
+   test("unknown lookupKey throws an “Invalid lookup key” error", () => {
+     expect(() => getTierAndIntervalForLookupKey("not-a-real-key")).toThrow(
+diff --git a/app/features/billing/billing-page.tsx b/app/features/billing/billing-page.tsx
+index eb41c3f..fc3d6c2 100644
+--- a/app/features/billing/billing-page.tsx
++++ b/app/features/billing/billing-page.tsx
+@@ -1,5 +1,4 @@
+ import type { SubmissionResult } from "@conform-to/react/future";
+-import type { Organization } from "@prisma/client";
+ import { CircleXIcon } from "lucide-react";
+ import { VisuallyHidden as VisuallyHiddenPrimitive } from "radix-ui";
+ import { useMemo, useState } from "react";
+@@ -42,6 +41,7 @@ import {
+ } from "~/components/ui/dialog";
+ import { Separator } from "~/components/ui/separator";
+ import { Spinner } from "~/components/ui/spinner";
++import type { Organization } from "~/generated/browser";
+ import { cn } from "~/lib/utils";
+ 
+ type PendingDowngradeBannerProps = {
+diff --git a/app/features/billing/cancel-or-modify-subscription-modal-content.test.tsx b/app/features/billing/cancel-or-modify-subscription-modal-content.test.tsx
+index 9cbbc18..be69af3 100644
+--- a/app/features/billing/cancel-or-modify-subscription-modal-content.test.tsx
++++ b/app/features/billing/cancel-or-modify-subscription-modal-content.test.tsx
+@@ -152,26 +152,22 @@ describe("CancelOrModifySubscriptionModalContent component", () => {
+     ).toHaveAttribute("href", href("/contact-sales"));
+   });
+ 
+-  test.each(["mid", "high"] as const)(
+-    "given: user is switching to low tier, should: show downgrading status",
+-    (currentTier) => {
+-      const props = createProps({ currentTier, isSwitchingToLow: true });
+-      const RouterStub = createRoutesStub([
+-        {
+-          Component: () => (
+-            <CancelOrModifySubscriptionModalContent {...props} />
+-          ),
+-          path: "/",
+-        },
+-      ]);
+-
+-      render(<RouterStub initialEntries={["/"]} />);
+-
+-      expect(
+-        screen.getByRole("button", { name: /downgrading/i }),
+-      ).toBeDisabled();
+-    },
+-  );
++  test.each([
++    "mid",
++    "high",
++  ] as const)("given: user is switching to low tier, should: show downgrading status", (currentTier) => {
++    const props = createProps({ currentTier, isSwitchingToLow: true });
++    const RouterStub = createRoutesStub([
++      {
++        Component: () => <CancelOrModifySubscriptionModalContent {...props} />,
++        path: "/",
++      },
++    ]);
++
++    render(<RouterStub initialEntries={["/"]} />);
++
++    expect(screen.getByRole("button", { name: /downgrading/i })).toBeDisabled();
++  });
+ 
+   test("given: user is switching to mid tier from low tier, should: show upgrading status", () => {
+     const props = createProps({ currentTier: "low", isSwitchingToMid: true });
+@@ -205,24 +201,22 @@ describe("CancelOrModifySubscriptionModalContent component", () => {
+     expect(downgradingButton).toBeDisabled();
+   });
+ 
+-  test.each(["low", "mid"] as const)(
+-    "given: user is switching to high tier, should: show upgrading status",
+-    (currentTier) => {
+-      const props = createProps({ currentTier, isSwitchingToHigh: true });
+-      const RouterStub = createRoutesStub([
+-        {
+-          Component: () => (
+-            <CancelOrModifySubscriptionModalContent {...props} />
+-          ),
+-          path: "/",
+-        },
+-      ]);
+-
+-      render(<RouterStub initialEntries={["/"]} />);
+-
+-      expect(screen.getByRole("button", { name: /upgrading/i })).toBeDisabled();
+-    },
+-  );
++  test.each([
++    "low",
++    "mid",
++  ] as const)("given: user is switching to high tier, should: show upgrading status", (currentTier) => {
++    const props = createProps({ currentTier, isSwitchingToHigh: true });
++    const RouterStub = createRoutesStub([
++      {
++        Component: () => <CancelOrModifySubscriptionModalContent {...props} />,
++        path: "/",
++      },
++    ]);
++
++    render(<RouterStub initialEntries={["/"]} />);
++
++    expect(screen.getByRole("button", { name: /upgrading/i })).toBeDisabled();
++  });
+ 
+   test("given: the user has a subscription they can cancel, should: show cancellation option", () => {
+     const props = createProps({ canCancelSubscription: true });
+@@ -240,67 +234,65 @@ describe("CancelOrModifySubscriptionModalContent component", () => {
+     ).toBeInTheDocument();
+   });
+ 
+-  test.each(["low", "mid", "high"] as const)(
+-    "given: the user is on the monthly plan, should: show 'switch to annual' button for their current tier",
+-    (currentTier) => {
+-      const props = createProps({
+-        currentTier,
+-        currentTierInterval: "monthly",
+-      });
+-      const RouterStub = createRoutesStub([
+-        {
+-          Component: () => (
+-            <CancelOrModifySubscriptionModalContent {...props} />
+-          ),
+-          path: "/",
+-        },
+-      ]);
+-
+-      render(<RouterStub initialEntries={["/"]} />);
+-
+-      // Should show "Switch to annual and save 20%" button
+-      expect(
+-        screen.getByRole("button", { name: /switch to annual/i }),
+-      ).toBeInTheDocument();
+-
+-      // Should NOT show the "current plan" button
+-      expect(
+-        screen.queryByRole("button", { name: /current plan/i }),
+-      ).not.toBeInTheDocument();
+-    },
+-  );
+-
+-  test.each(["low", "mid", "high"] as const)(
+-    "given: the user is on the annual plan, should: show 'switch to monthly' button for their current tier",
+-    async (currentTier) => {
+-      const user = userEvent.setup();
+-      const props = createProps({
+-        currentTier,
+-        currentTierInterval: "annual",
+-      });
+-      const RouterStub = createRoutesStub([
+-        {
+-          Component: () => (
+-            <CancelOrModifySubscriptionModalContent {...props} />
+-          ),
+-          path: "/",
+-        },
+-      ]);
+-
+-      render(<RouterStub initialEntries={["/"]} />);
+-
+-      // Switch to the monthly plan
+-      await user.click(screen.getByRole("tab", { name: /monthly/i }));
+-
+-      // Should show "Switch to monthly" button
+-      expect(
+-        screen.getByRole("button", { name: /switch to monthly/i }),
+-      ).toBeInTheDocument();
+-
+-      // Should NOT show the "current plan" button
+-      expect(
+-        screen.queryByRole("button", { name: /current plan/i }),
+-      ).not.toBeInTheDocument();
+-    },
+-  );
++  test.each([
++    "low",
++    "mid",
++    "high",
++  ] as const)("given: the user is on the monthly plan, should: show 'switch to annual' button for their current tier", (currentTier) => {
++    const props = createProps({
++      currentTier,
++      currentTierInterval: "monthly",
++    });
++    const RouterStub = createRoutesStub([
++      {
++        Component: () => <CancelOrModifySubscriptionModalContent {...props} />,
++        path: "/",
++      },
++    ]);
++
++    render(<RouterStub initialEntries={["/"]} />);
++
++    // Should show "Switch to annual and save 20%" button
++    expect(
++      screen.getByRole("button", { name: /switch to annual/i }),
++    ).toBeInTheDocument();
++
++    // Should NOT show the "current plan" button
++    expect(
++      screen.queryByRole("button", { name: /current plan/i }),
++    ).not.toBeInTheDocument();
++  });
++
++  test.each([
++    "low",
++    "mid",
++    "high",
++  ] as const)("given: the user is on the annual plan, should: show 'switch to monthly' button for their current tier", async (currentTier) => {
++    const user = userEvent.setup();
++    const props = createProps({
++      currentTier,
++      currentTierInterval: "annual",
++    });
++    const RouterStub = createRoutesStub([
++      {
++        Component: () => <CancelOrModifySubscriptionModalContent {...props} />,
++        path: "/",
++      },
++    ]);
++
++    render(<RouterStub initialEntries={["/"]} />);
++
++    // Switch to the monthly plan
++    await user.click(screen.getByRole("tab", { name: /monthly/i }));
++
++    // Should show "Switch to monthly" button
++    expect(
++      screen.getByRole("button", { name: /switch to monthly/i }),
++    ).toBeInTheDocument();
++
++    // Should NOT show the "current plan" button
++    expect(
++      screen.queryByRole("button", { name: /current plan/i }),
++    ).not.toBeInTheDocument();
++  });
+ });
+diff --git a/app/features/billing/contact-sales/contact-sales-form-submission-model.server.ts b/app/features/billing/contact-sales/contact-sales-form-submission-model.server.ts
+index 6074516..d59f493 100644
+--- a/app/features/billing/contact-sales/contact-sales-form-submission-model.server.ts
++++ b/app/features/billing/contact-sales/contact-sales-form-submission-model.server.ts
+@@ -1,5 +1,4 @@
+-import type { ContactSalesFormSubmission, Prisma } from "@prisma/client";
+-
++import type { ContactSalesFormSubmission, Prisma } from "~/generated/client";
+ import { prisma } from "~/utils/database.server";
+ 
+ /* CREATE */
+diff --git a/app/features/billing/stripe-helpers.server.ts b/app/features/billing/stripe-helpers.server.ts
+index 9a7d97e..9ec7b88 100644
+--- a/app/features/billing/stripe-helpers.server.ts
++++ b/app/features/billing/stripe-helpers.server.ts
+@@ -1,8 +1,8 @@
+-import type { Organization, UserAccount } from "@prisma/client";
+ import { href } from "react-router";
+ import type Stripe from "stripe";
+ 
+ import { stripeAdmin } from "~/features/billing/stripe-admin.server";
++import type { Organization, UserAccount } from "~/generated/client";
+ 
+ /**
+  * Creates a Stripe Checkout Session for a subscription purchase or update.
+diff --git a/app/features/billing/stripe-prices-model.server.ts b/app/features/billing/stripe-prices-model.server.ts
+index f2f0a58..be6b645 100644
+--- a/app/features/billing/stripe-prices-model.server.ts
++++ b/app/features/billing/stripe-prices-model.server.ts
+@@ -1,6 +1,6 @@
+-import type { Prisma, StripePrice } from "@prisma/client";
+ import type { Stripe } from "stripe";
+ 
++import type { Prisma, StripePrice } from "~/generated/client";
+ import { prisma } from "~/utils/database.server";
+ 
+ /* CREATE */
+diff --git a/app/features/billing/stripe-product-model.server.ts b/app/features/billing/stripe-product-model.server.ts
+index a16970b..bb70151 100644
+--- a/app/features/billing/stripe-product-model.server.ts
++++ b/app/features/billing/stripe-product-model.server.ts
+@@ -1,7 +1,7 @@
+-import type { Prisma, StripeProduct } from "@prisma/client";
+ import type { Stripe } from "stripe";
+ import { z } from "zod";
+ 
++import type { Prisma, StripeProduct } from "~/generated/client";
+ import { prisma } from "~/utils/database.server";
+ 
+ const maxSeatsSchema = z.preprocess((value) => {
+diff --git a/app/features/billing/stripe-subscription-model.server.ts b/app/features/billing/stripe-subscription-model.server.ts
+index a7733a5..52e8779 100644
+--- a/app/features/billing/stripe-subscription-model.server.ts
++++ b/app/features/billing/stripe-subscription-model.server.ts
+@@ -1,6 +1,10 @@
+-import type { Organization, Prisma, StripeSubscription } from "@prisma/client";
+ import type Stripe from "stripe";
+ 
++import type {
++  Organization,
++  Prisma,
++  StripeSubscription,
++} from "~/generated/client";
+ import { prisma } from "~/utils/database.server";
+ 
+ /* CREATE */
+diff --git a/app/features/billing/stripe-subscription-schedule-model.server.ts b/app/features/billing/stripe-subscription-schedule-model.server.ts
+index 6318696..758e947 100644
+--- a/app/features/billing/stripe-subscription-schedule-model.server.ts
++++ b/app/features/billing/stripe-subscription-schedule-model.server.ts
+@@ -1,7 +1,7 @@
+-import type { StripeSubscriptionSchedule } from "@prisma/client";
+ import type Stripe from "stripe";
+ 
+ import type { StripeSubscriptionScheduleWithPhasesAndPrice } from "./billing-factories.server";
++import type { StripeSubscriptionSchedule } from "~/generated/client";
+ import { prisma } from "~/utils/database.server";
+ 
+ /* CREATE */
+diff --git a/app/features/notifications/notification-components.tsx b/app/features/notifications/notification-components.tsx
+index 9708731..c89104d 100644
+--- a/app/features/notifications/notification-components.tsx
++++ b/app/features/notifications/notification-components.tsx
+@@ -1,4 +1,3 @@
+-import type { NotificationRecipient } from "@prisma/client";
+ import { MoreVerticalIcon } from "lucide-react";
+ import type { ComponentProps } from "react";
+ import { useState } from "react";
+@@ -14,6 +13,7 @@ import {
+   DropdownMenuItem,
+   DropdownMenuTrigger,
+ } from "~/components/ui/dropdown-menu";
++import type { NotificationRecipient } from "~/generated/browser";
+ import { cn } from "~/lib/utils";
+ import { toFormData } from "~/utils/to-form-data";
+ 
+diff --git a/app/features/notifications/notifications-factories.server.ts b/app/features/notifications/notifications-factories.server.ts
+index db2b21a..d5531ff 100644
+--- a/app/features/notifications/notifications-factories.server.ts
++++ b/app/features/notifications/notifications-factories.server.ts
+@@ -1,16 +1,16 @@
+ import { faker } from "@faker-js/faker";
+ import { createId } from "@paralleldrive/cuid2";
+-import type {
+-  Notification,
+-  NotificationPanel,
+-  NotificationRecipient,
+-  Prisma,
+-} from "@prisma/client";
+ 
+ import { LINK_NOTIFICATION_TYPE } from "./notification-constants";
+ import type { NotificationQueryResult } from "./notifications-model.server";
+ import type { NotificationType } from "./notifications-panel-content";
+ import type { LinkNotificationData } from "./notifications-schemas";
++import type {
++  Notification,
++  NotificationPanel,
++  NotificationRecipient,
++  Prisma,
++} from "~/generated/client";
+ import type { Factory } from "~/utils/types";
+ 
+ /**
+diff --git a/app/features/notifications/notifications-model.server.ts b/app/features/notifications/notifications-model.server.ts
+index 5a72cb1..bc7f9bc 100644
+--- a/app/features/notifications/notifications-model.server.ts
++++ b/app/features/notifications/notifications-model.server.ts
+@@ -3,9 +3,8 @@ import type {
+   NotificationRecipient,
+   Organization,
+   UserAccount,
+-} from "@prisma/client";
+-import { Prisma } from "@prisma/client";
+-
++} from "~/generated/client";
++import { Prisma } from "~/generated/client";
+ import { prisma } from "~/utils/database.server";
+ 
+ // Define the structure of the notification data we expect from the raw query
+diff --git a/app/features/notifications/use-pending-notifications.ts b/app/features/notifications/use-pending-notifications.ts
+index 99373dc..0df8e3a 100644
+--- a/app/features/notifications/use-pending-notifications.ts
++++ b/app/features/notifications/use-pending-notifications.ts
+@@ -1,7 +1,7 @@
+-import type { NotificationRecipient } from "@prisma/client";
+ import { useFetchers } from "react-router";
+ 
+ import { MARK_ONE_NOTIFICATION_AS_READ_INTENT } from "./notification-constants";
++import type { NotificationRecipient } from "~/generated/browser";
+ 
+ type PendingNotification = {
+   intent: typeof MARK_ONE_NOTIFICATION_AS_READ_INTENT;
+diff --git a/app/features/onboarding/onboarding-helpers.server.test.ts b/app/features/onboarding/onboarding-helpers.server.test.ts
+index ec8362b..b36dea3 100644
+--- a/app/features/onboarding/onboarding-helpers.server.test.ts
++++ b/app/features/onboarding/onboarding-helpers.server.test.ts
+@@ -1,6 +1,5 @@
+ /** biome-ignore-all lint/style/noNonNullAssertion: Test code */
+ import { faker } from "@faker-js/faker";
+-import { OrganizationMembershipRole } from "@prisma/client";
+ import { describe, expect, test } from "vitest";
+ 
+ import { createPopulatedOrganization } from "../organizations/organizations-factories.server";
+@@ -10,6 +9,7 @@ import {
+   throwIfUserIsOnboarded,
+   throwIfUserNeedsOnboarding,
+ } from "./onboarding-helpers.server";
++import { OrganizationMembershipRole } from "~/generated/client";
+ import { createOnboardingUser } from "~/test/test-utils";
+ 
+ describe("getUserIsOnboarded()", () => {
+@@ -171,32 +171,29 @@ describe("redirectUserToOnboardingStep()", () => {
+     test.each([
+       faker.internet.url(),
+       "http://localhost:3000/onboarding/organization",
+-    ])(
+-      "given: any other request (to %s) and the user has no name, and is NOT a member of any organizations yet, should: redirect the user to the organization onboarding page",
+-      (url) => {
+-        expect.assertions(3);
+-
+-        const user = createOnboardingUser({ memberships: [], name: "" });
+-        const method = faker.internet.httpMethod();
+-        const request = new Request(url, { method });
+-        const headers = new Headers({ "X-Test-Header": "test-value" });
+-
+-        try {
+-          redirectUserToOnboardingStep(request, user, headers);
+-        } catch (error) {
+-          if (error instanceof Response) {
+-            expect(error.status).toEqual(302);
+-            expect(error.headers.get("Location")).toEqual(
+-              "/onboarding/user-account",
+-            );
+-            expect([...error.headers.entries()]).toEqual([
+-              ["location", "/onboarding/user-account"],
+-              ...headers.entries(),
+-            ]);
+-          }
++    ])("given: any other request (to %s) and the user has no name, and is NOT a member of any organizations yet, should: redirect the user to the organization onboarding page", (url) => {
++      expect.assertions(3);
++
++      const user = createOnboardingUser({ memberships: [], name: "" });
++      const method = faker.internet.httpMethod();
++      const request = new Request(url, { method });
++      const headers = new Headers({ "X-Test-Header": "test-value" });
++
++      try {
++        redirectUserToOnboardingStep(request, user, headers);
++      } catch (error) {
++        if (error instanceof Response) {
++          expect(error.status).toEqual(302);
++          expect(error.headers.get("Location")).toEqual(
++            "/onboarding/user-account",
++          );
++          expect([...error.headers.entries()]).toEqual([
++            ["location", "/onboarding/user-account"],
++            ...headers.entries(),
++          ]);
+         }
+-      },
+-    );
++      }
++    });
+   });
+ 
+   describe("organization onboarding page", () => {
+@@ -216,32 +213,29 @@ describe("redirectUserToOnboardingStep()", () => {
+     test.each([
+       faker.internet.url(),
+       "http://localhost:3000/onboarding/future-step",
+-    ])(
+-      "given: any other request (to %s) and a user that is NOT a member of any organizations yet, should: redirect the user to the organization onboarding page",
+-      (url) => {
+-        expect.assertions(3);
+-
+-        const user = createOnboardingUser({ memberships: [] });
+-        const method = faker.internet.httpMethod();
+-        const request = new Request(url, { method });
+-        const headers = new Headers({ "X-Test-Header": "test-value" });
+-
+-        try {
+-          redirectUserToOnboardingStep(request, user, headers);
+-        } catch (error) {
+-          if (error instanceof Response) {
+-            expect(error.status).toEqual(302);
+-            expect(error.headers.get("Location")).toEqual(
+-              "/onboarding/organization",
+-            );
+-            expect([...error.headers.entries()]).toEqual([
+-              ["location", "/onboarding/organization"],
+-              ...headers.entries(),
+-            ]);
+-          }
++    ])("given: any other request (to %s) and a user that is NOT a member of any organizations yet, should: redirect the user to the organization onboarding page", (url) => {
++      expect.assertions(3);
++
++      const user = createOnboardingUser({ memberships: [] });
++      const method = faker.internet.httpMethod();
++      const request = new Request(url, { method });
++      const headers = new Headers({ "X-Test-Header": "test-value" });
++
++      try {
++        redirectUserToOnboardingStep(request, user, headers);
++      } catch (error) {
++        if (error instanceof Response) {
++          expect(error.status).toEqual(302);
++          expect(error.headers.get("Location")).toEqual(
++            "/onboarding/organization",
++          );
++          expect([...error.headers.entries()]).toEqual([
++            ["location", "/onboarding/organization"],
++            ...headers.entries(),
++          ]);
+         }
+-      },
+-    );
++      }
++    });
+   });
+ });
+ 
+diff --git a/app/features/organizations/accept-email-invite/accept-email-invite-action.server.ts b/app/features/organizations/accept-email-invite/accept-email-invite-action.server.ts
+index 214a047..0f9ac4a 100644
+--- a/app/features/organizations/accept-email-invite/accept-email-invite-action.server.ts
++++ b/app/features/organizations/accept-email-invite/accept-email-invite-action.server.ts
+@@ -122,6 +122,9 @@ export async function acceptEmailInviteAction({
+               ) ||
+               message.includes(
+                 "Unique constraint failed on the fields: (`userId`,`organizationId`)",
++              ) ||
++              message.includes(
++                'Unique constraint failed on the fields: (`"userId"',
+               )
+             ) {
+               await updateEmailInviteLinkInDatabaseById({
+diff --git a/app/features/organizations/accept-email-invite/accept-email-invite-page.tsx b/app/features/organizations/accept-email-invite/accept-email-invite-page.tsx
+index ce2929e..5df532b 100644
+--- a/app/features/organizations/accept-email-invite/accept-email-invite-page.tsx
++++ b/app/features/organizations/accept-email-invite/accept-email-invite-page.tsx
+@@ -1,4 +1,3 @@
+-import type { Organization, UserAccount } from "@prisma/client";
+ import { useTranslation } from "react-i18next";
+ import { Form, useNavigation } from "react-router";
+ 
+@@ -6,6 +5,7 @@ import { ACCEPT_EMAIL_INVITE_INTENT } from "./accept-email-invite-constants";
+ import { Badge } from "~/components/ui/badge";
+ import { Button } from "~/components/ui/button";
+ import { Spinner } from "~/components/ui/spinner";
++import type { Organization, UserAccount } from "~/generated/browser";
+ 
+ export type AcceptEmailInvitePageProps = {
+   inviterName: UserAccount["name"];
+diff --git a/app/features/organizations/accept-email-invite/accept-email-invite-session.server.ts b/app/features/organizations/accept-email-invite/accept-email-invite-session.server.ts
+index 0de52d2..daba855 100644
+--- a/app/features/organizations/accept-email-invite/accept-email-invite-session.server.ts
++++ b/app/features/organizations/accept-email-invite/accept-email-invite-session.server.ts
+@@ -1,8 +1,8 @@
+-import type { OrganizationEmailInviteLink } from "@prisma/client";
+ import { createCookieSessionStorage } from "react-router";
+ import { z } from "zod";
+ 
+ import { EMAIL_INVITE_INFO_SESSION_NAME } from "./accept-email-invite-constants";
++import type { OrganizationEmailInviteLink } from "~/generated/client";
+ 
+ // Define keys for the session data
+ const EMAIL_INVITE_TOKEN_KEY = "emailInviteToken"; // This is the token NOT the id
+diff --git a/app/features/organizations/accept-invite-link/accept-invite-link-action.server.ts b/app/features/organizations/accept-invite-link/accept-invite-link-action.server.ts
+index e7aedef..5c6f963 100644
+--- a/app/features/organizations/accept-invite-link/accept-invite-link-action.server.ts
++++ b/app/features/organizations/accept-invite-link/accept-invite-link-action.server.ts
+@@ -99,6 +99,9 @@ export async function acceptInviteLinkAction({
+               ) ||
+               message.includes(
+                 "Unique constraint failed on the fields: (`userId`,`organizationId`)",
++              ) ||
++              message.includes(
++                'Unique constraint failed on the fields: (`"userId"',
+               )
+             ) {
+               return await redirectWithToast(
+diff --git a/app/features/organizations/accept-invite-link/accept-invite-link-page.tsx b/app/features/organizations/accept-invite-link/accept-invite-link-page.tsx
+index 75eaf31..c5b3cce 100644
+--- a/app/features/organizations/accept-invite-link/accept-invite-link-page.tsx
++++ b/app/features/organizations/accept-invite-link/accept-invite-link-page.tsx
+@@ -1,4 +1,3 @@
+-import type { Organization, UserAccount } from "@prisma/client";
+ import { useTranslation } from "react-i18next";
+ import { Form, useNavigation } from "react-router";
+ 
+@@ -6,6 +5,7 @@ import { ACCEPT_INVITE_LINK_INTENT } from "./accept-invite-link-constants";
+ import { Badge } from "~/components/ui/badge";
+ import { Button } from "~/components/ui/button";
+ import { Spinner } from "~/components/ui/spinner";
++import type { Organization, UserAccount } from "~/generated/browser";
+ 
+ export type AcceptInviteLinkPageProps = {
+   inviterName: UserAccount["name"];
+diff --git a/app/features/organizations/accept-invite-link/accept-invite-link-session.server.ts b/app/features/organizations/accept-invite-link/accept-invite-link-session.server.ts
+index 6beafc0..8c1273a 100644
+--- a/app/features/organizations/accept-invite-link/accept-invite-link-session.server.ts
++++ b/app/features/organizations/accept-invite-link/accept-invite-link-session.server.ts
+@@ -1,8 +1,8 @@
+-import type { OrganizationInviteLink } from "@prisma/client";
+ import { createCookieSessionStorage } from "react-router";
+ import { z } from "zod";
+ 
+ import { INVITE_LINK_INFO_SESSION_NAME } from "./accept-invite-link-constants";
++import type { OrganizationInviteLink } from "~/generated/client";
+ 
+ // Define keys for the session data
+ const INVITE_LINK_TOKEN_KEY = "inviteLinkToken"; // This is the token NOT the id
+diff --git a/app/features/organizations/accept-invite-link/invite-link-use-model.server.ts b/app/features/organizations/accept-invite-link/invite-link-use-model.server.ts
+index 1f54e63..1ff85f2 100644
+--- a/app/features/organizations/accept-invite-link/invite-link-use-model.server.ts
++++ b/app/features/organizations/accept-invite-link/invite-link-use-model.server.ts
+@@ -2,8 +2,7 @@ import type {
+   InviteLinkUse,
+   OrganizationInviteLink,
+   UserAccount,
+-} from "@prisma/client";
+-
++} from "~/generated/client";
+ import { prisma } from "~/utils/database.server";
+ 
+ export type PartialinviteLinkUseParameters = Pick<
+diff --git a/app/features/organizations/layout/layout-helpers.server.test.ts b/app/features/organizations/layout/layout-helpers.server.test.ts
+index d650ad7..3f91fdc 100644
+--- a/app/features/organizations/layout/layout-helpers.server.test.ts
++++ b/app/features/organizations/layout/layout-helpers.server.test.ts
+@@ -1,4 +1,3 @@
+-import { OrganizationMembershipRole } from "@prisma/client";
+ import { href } from "react-router";
+ import { describe, expect, test } from "vitest";
+ 
+@@ -14,6 +13,7 @@ import {
+   createPopulatedStripeSubscriptionItemWithPriceAndProduct,
+   createPopulatedStripeSubscriptionWithScheduleAndItemsWithPriceAndProduct,
+ } from "~/features/billing/billing-factories.server";
++import { OrganizationMembershipRole } from "~/generated/client";
+ import { createOnboardingUser } from "~/test/test-utils";
+ 
+ describe("getSidebarState", () => {
+@@ -303,40 +303,37 @@ describe("mapOnboardingUserToBillingSidebarCardProps()", () => {
+     OrganizationMembershipRole.member,
+     OrganizationMembershipRole.admin,
+     OrganizationMembershipRole.owner,
+-  ])(
+-    "given: an onboarded %s user without a free trial, should: return an empty object",
+-    (role) => {
+-      const now = new Date();
+-      const subscription =
+-        createPopulatedStripeSubscriptionItemWithPriceAndProduct({
+-          price: {
+-            lookupKey: priceLookupKeysByTierAndInterval.low.monthly,
+-          },
+-        });
+-      const organization = createPopulatedOrganization();
+-      const user = createOnboardingUser({
+-        memberships: [
+-          {
+-            deactivatedAt: null,
+-            organization: {
+-              ...organization,
+-              stripeSubscriptions: [subscription],
+-            },
+-            role,
+-          },
+-        ],
++  ])("given: an onboarded %s user without a free trial, should: return an empty object", (role) => {
++    const now = new Date();
++    const subscription =
++      createPopulatedStripeSubscriptionItemWithPriceAndProduct({
++        price: {
++          lookupKey: priceLookupKeysByTierAndInterval.low.monthly,
++        },
+       });
++    const organization = createPopulatedOrganization();
++    const user = createOnboardingUser({
++      memberships: [
++        {
++          deactivatedAt: null,
++          organization: {
++            ...organization,
++            stripeSubscriptions: [subscription],
++          },
++          role,
++        },
++      ],
++    });
+ 
+-      const actual = mapOnboardingUserToBillingSidebarCardProps({
+-        now,
+-        organizationSlug: organization.slug,
+-        user,
+-      });
+-      const expected = {};
++    const actual = mapOnboardingUserToBillingSidebarCardProps({
++      now,
++      organizationSlug: organization.slug,
++      user,
++    });
++    const expected = {};
+ 
+-      expect(actual).toEqual(expected);
+-    },
+-  );
++    expect(actual).toEqual(expected);
++  });
+ 
+   test("given: an onboarded member user with a free trial, should: show the billing sidebar card without the button", () => {
+     const now = new Date();
+@@ -373,41 +370,38 @@ describe("mapOnboardingUserToBillingSidebarCardProps()", () => {
+   test.each([
+     OrganizationMembershipRole.admin,
+     OrganizationMembershipRole.owner,
+-  ])(
+-    "given: an onboarded %s user with a free trial, should: show the billing sidebar card with the button",
+-    (role) => {
+-      const now = new Date();
+-      const organization = createPopulatedOrganization({
+-        // 1 day ago
+-        createdAt: new Date(now.getTime() - 1000 * 60 * 60 * 24),
+-      });
+-      const user = createOnboardingUser({
+-        memberships: [
+-          {
+-            deactivatedAt: null,
+-            organization: { ...organization, stripeSubscriptions: [] },
+-            role,
+-          },
+-        ],
+-      });
++  ])("given: an onboarded %s user with a free trial, should: show the billing sidebar card with the button", (role) => {
++    const now = new Date();
++    const organization = createPopulatedOrganization({
++      // 1 day ago
++      createdAt: new Date(now.getTime() - 1000 * 60 * 60 * 24),
++    });
++    const user = createOnboardingUser({
++      memberships: [
++        {
++          deactivatedAt: null,
++          organization: { ...organization, stripeSubscriptions: [] },
++          role,
++        },
++      ],
++    });
+ 
+-      const actual = mapOnboardingUserToBillingSidebarCardProps({
+-        now,
+-        organizationSlug: organization.slug,
+-        user,
+-      });
++    const actual = mapOnboardingUserToBillingSidebarCardProps({
++      now,
++      organizationSlug: organization.slug,
++      user,
++    });
+ 
+-      const expected = {
+-        billingSidebarCardProps: {
+-          showButton: true,
+-          state: "trialing",
+-          trialEndDate: organization.trialEnd,
+-        },
+-      };
++    const expected = {
++      billingSidebarCardProps: {
++        showButton: true,
++        state: "trialing",
++        trialEndDate: organization.trialEnd,
++      },
++    };
+ 
+-      expect(actual).toEqual(expected);
+-    },
+-  );
++    expect(actual).toEqual(expected);
++  });
+ 
+   test("given: any onboarded user with a free trial that has run out, should: show the billing sidebar card with the correct content", () => {
+     const now = new Date();
+@@ -472,12 +466,13 @@ describe("switchSlugInRoute()", () => {
+       }),
+       slug: "org-1",
+     },
+-  ])(
+-    "given: a route with a slug, should: return the route with the slug replaced",
+-    ({ route, slug, expected }) => {
+-      const actual = switchSlugInRoute(route, slug);
++  ])("given: a route with a slug, should: return the route with the slug replaced", ({
++    route,
++    slug,
++    expected,
++  }) => {
++    const actual = switchSlugInRoute(route, slug);
+ 
+-      expect(actual).toEqual(expected);
+-    },
+-  );
++    expect(actual).toEqual(expected);
++  });
+ });
+diff --git a/app/features/organizations/layout/layout-helpers.server.ts b/app/features/organizations/layout/layout-helpers.server.ts
+index 6f32dc5..2c4395b 100644
+--- a/app/features/organizations/layout/layout-helpers.server.ts
++++ b/app/features/organizations/layout/layout-helpers.server.ts
+@@ -1,12 +1,11 @@
+-import type { Organization } from "@prisma/client";
+-import { OrganizationMembershipRole } from "@prisma/client";
+-
+ import type { NavUserProps } from "./nav-user";
+ import type { OrganizationSwitcherProps } from "./organization-switcher";
+ import { priceLookupKeysByTierAndInterval } from "~/features/billing/billing-constants";
+ import { getTierAndIntervalForLookupKey } from "~/features/billing/billing-helpers";
+ import type { BillingSidebarCardProps } from "~/features/billing/billing-sidebar-card";
+ import type { OnboardingUser } from "~/features/onboarding/onboarding-helpers.server";
++import type { Organization } from "~/generated/client";
++import { OrganizationMembershipRole } from "~/generated/client";
+ 
+ /**
+  * Gets the sidebar state from the request cookies. This is used to determine
+diff --git a/app/features/organizations/layout/organization-switcher.tsx b/app/features/organizations/layout/organization-switcher.tsx
+index fcb37dc..f4e176b 100644
+--- a/app/features/organizations/layout/organization-switcher.tsx
++++ b/app/features/organizations/layout/organization-switcher.tsx
+@@ -1,4 +1,3 @@
+-import type { Organization } from "@prisma/client";
+ import { ChevronsUpDownIcon, PlusIcon } from "lucide-react";
+ import { useTranslation } from "react-i18next";
+ import { Form, Link, useLocation } from "react-router";
+@@ -21,6 +20,7 @@ import {
+   useSidebar,
+ } from "~/components/ui/sidebar";
+ import type { Tier } from "~/features/billing/billing-constants";
++import type { Organization } from "~/generated/browser";
+ 
+ type OrganizationSwitcherOrganization = {
+   id: Organization["id"];
+diff --git a/app/features/organizations/layout/sidebar-layout-action.server.ts b/app/features/organizations/layout/sidebar-layout-action.server.ts
+index 70b5e68..0a0be96 100644
+--- a/app/features/organizations/layout/sidebar-layout-action.server.ts
++++ b/app/features/organizations/layout/sidebar-layout-action.server.ts
+@@ -1,4 +1,3 @@
+-import { OrganizationMembershipRole } from "@prisma/client";
+ import { data, redirect } from "react-router";
+ import { safeRedirect } from "remix-utils/safe-redirect";
+ import { z } from "zod";
+@@ -30,6 +29,7 @@ import {
+   markOneAsReadSchema,
+   notificationPanelOpenedSchema,
+ } from "~/features/notifications/notifications-schemas";
++import { OrganizationMembershipRole } from "~/generated/client";
+ import { combineHeaders } from "~/utils/combine-headers.server";
+ import { getIsDataWithResponseInit } from "~/utils/get-is-data-with-response-init.server";
+ import { requestToUrl } from "~/utils/get-search-parameter-from-request.server";
+diff --git a/app/features/organizations/organization-membership-model.server.ts b/app/features/organizations/organization-membership-model.server.ts
+index 63f9765..5cb0369 100644
+--- a/app/features/organizations/organization-membership-model.server.ts
++++ b/app/features/organizations/organization-membership-model.server.ts
+@@ -1,5 +1,4 @@
+-import type { Organization, Prisma, UserAccount } from "@prisma/client";
+-
++import type { Organization, Prisma, UserAccount } from "~/generated/client";
+ import { prisma } from "~/utils/database.server";
+ 
+ /* READ */
+diff --git a/app/features/organizations/organizations-email-invite-link-model.server.ts b/app/features/organizations/organizations-email-invite-link-model.server.ts
+index 43daeb8..649d29a 100644
+--- a/app/features/organizations/organizations-email-invite-link-model.server.ts
++++ b/app/features/organizations/organizations-email-invite-link-model.server.ts
+@@ -2,8 +2,7 @@ import type {
+   Organization,
+   OrganizationEmailInviteLink,
+   Prisma,
+-} from "@prisma/client";
+-
++} from "~/generated/client";
+ import { prisma } from "~/utils/database.server";
+ 
+ /* CREATE */
+diff --git a/app/features/organizations/organizations-factories.server.ts b/app/features/organizations/organizations-factories.server.ts
+index 8b3de5f..c40be97 100644
+--- a/app/features/organizations/organizations-factories.server.ts
++++ b/app/features/organizations/organizations-factories.server.ts
+@@ -1,17 +1,17 @@
+ import { faker } from "@faker-js/faker";
+ import { createId } from "@paralleldrive/cuid2";
++import { addDays } from "date-fns";
++
++import { createPopulatedStripeSubscriptionWithScheduleAndItemsWithPriceAndProduct } from "../billing/billing-factories.server";
++import type { OrganizationWithMembershipsAndSubscriptions } from "../onboarding/onboarding-helpers.server";
+ import type {
+   InviteLinkUse,
+   Organization,
+   OrganizationEmailInviteLink,
+   OrganizationInviteLink,
+   OrganizationMembership,
+-} from "@prisma/client";
+-import { OrganizationMembershipRole } from "@prisma/client";
+-import { addDays } from "date-fns";
+-
+-import { createPopulatedStripeSubscriptionWithScheduleAndItemsWithPriceAndProduct } from "../billing/billing-factories.server";
+-import type { OrganizationWithMembershipsAndSubscriptions } from "../onboarding/onboarding-helpers.server";
++} from "~/generated/client";
++import { OrganizationMembershipRole } from "~/generated/client";
+ import { slugify } from "~/utils/slugify.server";
+ import type { Factory } from "~/utils/types";
+ 
+diff --git a/app/features/organizations/organizations-helpers.server.test.ts b/app/features/organizations/organizations-helpers.server.test.ts
+index fc84828..1d80859 100644
+--- a/app/features/organizations/organizations-helpers.server.test.ts
++++ b/app/features/organizations/organizations-helpers.server.test.ts
+@@ -1,5 +1,5 @@
+ /** biome-ignore-all lint/style/noNonNullAssertion: Test code */
+-import { OrganizationMembershipRole } from "@prisma/client";
++
+ import { describe, expect, test } from "vitest";
+ 
+ import { createPopulatedOrganization } from "./organizations-factories.server";
+@@ -7,6 +7,7 @@ import {
+   findOrganizationIfUserIsMemberById,
+   findOrganizationIfUserIsMemberBySlug,
+ } from "./organizations-helpers.server";
++import { OrganizationMembershipRole } from "~/generated/client";
+ import { createOnboardingUser } from "~/test/test-utils";
+ import { notFound } from "~/utils/http-responses.server";
+ 
+diff --git a/app/features/organizations/organizations-helpers.server.ts b/app/features/organizations/organizations-helpers.server.ts
+index 10dd5ff..02a4964 100644
+--- a/app/features/organizations/organizations-helpers.server.ts
++++ b/app/features/organizations/organizations-helpers.server.ts
+@@ -1,10 +1,3 @@
+-import type {
+-  Organization,
+-  OrganizationEmailInviteLink,
+-  OrganizationInviteLink,
+-  UserAccount,
+-} from "@prisma/client";
+-import { OrganizationMembershipRole } from "@prisma/client";
+ import type { FileUpload } from "@remix-run/form-data-parser";
+ import type { SupabaseClient } from "@supabase/supabase-js";
+ import type { i18n } from "i18next";
+@@ -34,6 +27,13 @@ import {
+   retrieveMemberCountAndLatestStripeSubscriptionFromDatabaseByOrganizationId,
+   retrieveOrganizationWithSubscriptionsFromDatabaseById,
+ } from "./organizations-model.server";
++import type {
++  Organization,
++  OrganizationEmailInviteLink,
++  OrganizationInviteLink,
++  UserAccount,
++} from "~/generated/client";
++import { OrganizationMembershipRole } from "~/generated/client";
+ import { combineHeaders } from "~/utils/combine-headers.server";
+ import { notFound } from "~/utils/http-responses.server";
+ import { createAdminS3Client } from "~/utils/s3.server";
+diff --git a/app/features/organizations/organizations-invite-link-model.server.ts b/app/features/organizations/organizations-invite-link-model.server.ts
+index 602eddc..9492ceb 100644
+--- a/app/features/organizations/organizations-invite-link-model.server.ts
++++ b/app/features/organizations/organizations-invite-link-model.server.ts
+@@ -1,5 +1,4 @@
+-import type { OrganizationInviteLink, Prisma } from "@prisma/client";
+-
++import type { OrganizationInviteLink, Prisma } from "~/generated/client";
+ import { prisma } from "~/utils/database.server";
+ 
+ /* CREATE */
+diff --git a/app/features/organizations/organizations-middleware.server.ts b/app/features/organizations/organizations-middleware.server.ts
+index c97c68c..5b56602 100644
+--- a/app/features/organizations/organizations-middleware.server.ts
++++ b/app/features/organizations/organizations-middleware.server.ts
+@@ -1,9 +1,9 @@
+-import type { OrganizationMembershipRole } from "@prisma/client";
+ import type { MiddlewareFunction } from "react-router";
+ import { createContext } from "react-router";
+ 
+ import type { OnboardingUser } from "../onboarding/onboarding-helpers.server";
+ import { requireUserIsMemberOfOrganization } from "./organizations-helpers.server";
++import type { OrganizationMembershipRole } from "~/generated/client";
+ 
+ export const organizationMembershipContext = createContext<{
+   headers: Headers;
+diff --git a/app/features/organizations/organizations-model.server.ts b/app/features/organizations/organizations-model.server.ts
+index 2fc3020..deec4b9 100644
+--- a/app/features/organizations/organizations-model.server.ts
++++ b/app/features/organizations/organizations-model.server.ts
+@@ -1,13 +1,13 @@
++import type Stripe from "stripe";
++
++import type { StripeSubscriptionWithItemsAndPrice } from "../billing/billing-factories.server";
+ import type {
+   Organization,
+   OrganizationMembership,
+   Prisma,
+   UserAccount,
+-} from "@prisma/client";
+-import { OrganizationMembershipRole } from "@prisma/client";
+-import type Stripe from "stripe";
+-
+-import type { StripeSubscriptionWithItemsAndPrice } from "../billing/billing-factories.server";
++} from "~/generated/client";
++import { OrganizationMembershipRole } from "~/generated/client";
+ import { prisma } from "~/utils/database.server";
+ 
+ /* CREATE */
+diff --git a/app/features/organizations/settings/general/general-organization-settings-action.server.ts b/app/features/organizations/settings/general/general-organization-settings-action.server.ts
+index 80e30ff..fbb5c1a 100644
+--- a/app/features/organizations/settings/general/general-organization-settings-action.server.ts
++++ b/app/features/organizations/settings/general/general-organization-settings-action.server.ts
+@@ -1,5 +1,4 @@
+ import { coerceFormValue } from "@conform-to/zod/v4/future";
+-import { OrganizationMembershipRole } from "@prisma/client";
+ import { data, href } from "react-router";
+ import { z } from "zod";
+ 
+@@ -21,6 +20,7 @@ import type { Route } from ".react-router/types/app/routes/_authenticated-routes
+ import { updateStripeCustomer } from "~/features/billing/stripe-helpers.server";
+ import { getInstance } from "~/features/localization/i18next-middleware.server";
+ import { authContext } from "~/features/user-authentication/user-authentication-middleware.server";
++import { OrganizationMembershipRole } from "~/generated/client";
+ import { combineHeaders } from "~/utils/combine-headers.server";
+ import { forbidden } from "~/utils/http-responses.server";
+ import { slugify } from "~/utils/slugify.server";
+diff --git a/app/features/organizations/settings/general/general-organization-settings.tsx b/app/features/organizations/settings/general/general-organization-settings.tsx
+index 779f2f3..660de5e 100644
+--- a/app/features/organizations/settings/general/general-organization-settings.tsx
++++ b/app/features/organizations/settings/general/general-organization-settings.tsx
+@@ -1,7 +1,6 @@
+ import type { SubmissionResult } from "@conform-to/react/future";
+ import { useForm } from "@conform-to/react/future";
+ import { coerceFormValue } from "@conform-to/zod/v4/future";
+-import type { Organization } from "@prisma/client";
+ import { Trans, useTranslation } from "react-i18next";
+ import { Form, useNavigation } from "react-router";
+ 
+@@ -32,6 +31,7 @@ import {
+ } from "~/components/ui/hover-card";
+ import { Input } from "~/components/ui/input";
+ import { Spinner } from "~/components/ui/spinner";
++import type { Organization } from "~/generated/browser";
+ 
+ const ONE_MB = 1_000_000;
+ 
+diff --git a/app/features/organizations/settings/settings-sidebar.tsx b/app/features/organizations/settings/settings-sidebar.tsx
+index 4b36537..3051e88 100644
+--- a/app/features/organizations/settings/settings-sidebar.tsx
++++ b/app/features/organizations/settings/settings-sidebar.tsx
+@@ -1,9 +1,9 @@
+-import type { OrganizationMembershipRole } from "@prisma/client";
+ import { Building2Icon, CreditCardIcon, UsersIcon } from "lucide-react";
+ import { useTranslation } from "react-i18next";
+ import { href, useMatch } from "react-router";
+ 
+ import { NavGroup } from "../layout/nav-group";
++import type { OrganizationMembershipRole } from "~/generated/browser";
+ import { cn } from "~/lib/utils";
+ 
+ type SettingsSidebarProps = {
+diff --git a/app/features/organizations/settings/team-members/invite-by-email-card.tsx b/app/features/organizations/settings/team-members/invite-by-email-card.tsx
+index 53005a5..f8a791b 100644
+--- a/app/features/organizations/settings/team-members/invite-by-email-card.tsx
++++ b/app/features/organizations/settings/team-members/invite-by-email-card.tsx
+@@ -1,6 +1,5 @@
+ import type { SubmissionResult } from "@conform-to/react/future";
+ import { useForm } from "@conform-to/react/future";
+-import { OrganizationMembershipRole } from "@prisma/client";
+ import { useEffect } from "react";
+ import { useTranslation } from "react-i18next";
+ import { Form } from "react-router";
+@@ -27,6 +26,7 @@ import {
+   SelectValue,
+ } from "~/components/ui/select";
+ import { Spinner } from "~/components/ui/spinner";
++import { OrganizationMembershipRole } from "~/generated/browser";
+ 
+ export type EmailInviteCardProps = {
+   currentUserIsOwner: boolean;
+diff --git a/app/features/organizations/settings/team-members/team-members-action.server.tsx b/app/features/organizations/settings/team-members/team-members-action.server.tsx
+index ed1693e..4a053b8 100644
+--- a/app/features/organizations/settings/team-members/team-members-action.server.tsx
++++ b/app/features/organizations/settings/team-members/team-members-action.server.tsx
+@@ -1,7 +1,5 @@
+ import { report } from "@conform-to/react/future";
+ import { createId } from "@paralleldrive/cuid2";
+-import type { Prisma } from "@prisma/client";
+-import { OrganizationMembershipRole } from "@prisma/client";
+ import { addDays } from "date-fns";
+ import { data } from "react-router";
+ import { z } from "zod";
+@@ -33,6 +31,8 @@ import {
+ import type { Route } from ".react-router/types/app/routes/_authenticated-routes+/organizations_+/$organizationSlug+/settings+/+types/members";
+ import { adjustSeats } from "~/features/billing/stripe-helpers.server";
+ import { getInstance } from "~/features/localization/i18next-middleware.server";
++import type { Prisma } from "~/generated/client";
++import { OrganizationMembershipRole } from "~/generated/client";
+ import { combineHeaders } from "~/utils/combine-headers.server";
+ import { sendEmail } from "~/utils/email.server";
+ import { getIsDataWithResponseInit } from "~/utils/get-is-data-with-response-init.server";
+diff --git a/app/features/organizations/settings/team-members/team-members-helpers.server.test.ts b/app/features/organizations/settings/team-members/team-members-helpers.server.test.ts
+index 9ab977d..c903763 100644
+--- a/app/features/organizations/settings/team-members/team-members-helpers.server.test.ts
++++ b/app/features/organizations/settings/team-members/team-members-helpers.server.test.ts
+@@ -1,7 +1,6 @@
+ /** biome-ignore-all lint/style/noNonNullAssertion: test code */
+ import { faker } from "@faker-js/faker";
+ import { createId } from "@paralleldrive/cuid2";
+-import { OrganizationMembershipRole } from "@prisma/client";
+ import { describe, expect, test } from "vitest";
+ 
+ import {
+@@ -18,6 +17,7 @@ import {
+ import type { StripeSubscriptionWithItemsAndPriceAndProduct } from "~/features/billing/billing-factories.server";
+ import { createPopulatedStripeSubscriptionWithItemsAndPriceAndProduct } from "~/features/billing/billing-factories.server";
+ import { createPopulatedUserAccount } from "~/features/user-accounts/user-accounts-factories.server";
++import { OrganizationMembershipRole } from "~/generated/client";
+ 
+ const createOrganizationWithLinksAndMembers = ({
+   emailInviteCount,
+diff --git a/app/features/organizations/settings/team-members/team-members-helpers.server.ts b/app/features/organizations/settings/team-members/team-members-helpers.server.ts
+index 1dfc29d..ba958ed 100644
+--- a/app/features/organizations/settings/team-members/team-members-helpers.server.ts
++++ b/app/features/organizations/settings/team-members/team-members-helpers.server.ts
+@@ -1,10 +1,9 @@
+-import type { OrganizationMembership, UserAccount } from "@prisma/client";
+-import { OrganizationMembershipRole } from "@prisma/client";
+-
+ import type { EmailInviteCardProps } from "./invite-by-email-card";
+ import type { InviteLinkCardProps } from "./invite-link-card";
+ import type { TeamMembersTableProps } from "./team-members-table";
+ import { retrieveOrganizationWithMembersAndLatestInviteLinkFromDatabaseBySlug } from "~/features/organizations/organizations-model.server";
++import type { OrganizationMembership, UserAccount } from "~/generated/client";
++import { OrganizationMembershipRole } from "~/generated/client";
+ import { asyncPipe } from "~/utils/async-pipe.server";
+ import { throwIfEntityIsMissing } from "~/utils/throw-if-entity-is-missing.server";
+ 
+diff --git a/app/features/organizations/settings/team-members/team-members-settings-schemas.ts b/app/features/organizations/settings/team-members/team-members-settings-schemas.ts
+index d266e6c..239322a 100644
+--- a/app/features/organizations/settings/team-members/team-members-settings-schemas.ts
++++ b/app/features/organizations/settings/team-members/team-members-settings-schemas.ts
+@@ -1,10 +1,10 @@
+-import { OrganizationMembershipRole } from "@prisma/client";
+ import { z } from "zod";
+ 
+ import {
+   CHANGE_ROLE_INTENT,
+   INVITE_BY_EMAIL_INTENT,
+ } from "./team-members-constants";
++import { OrganizationMembershipRole } from "~/generated/browser";
+ 
+ z.config({ jitless: true });
+ 
+diff --git a/app/features/organizations/settings/team-members/team-members-table.test.tsx b/app/features/organizations/settings/team-members/team-members-table.test.tsx
+index b8572ce..73fd007 100644
+--- a/app/features/organizations/settings/team-members/team-members-table.test.tsx
++++ b/app/features/organizations/settings/team-members/team-members-table.test.tsx
+@@ -1,11 +1,11 @@
+ import { faker } from "@faker-js/faker";
+-import { OrganizationMembershipRole } from "@prisma/client";
+ import { describe, expect, test } from "vitest";
+ 
+ import type { Member } from "./team-members-table";
+ import { TeamMembersTable } from "./team-members-table";
+ import { createPopulatedOrganization } from "~/features/organizations/organizations-factories.server";
+ import { createPopulatedUserAccount } from "~/features/user-accounts/user-accounts-factories.server";
++import { OrganizationMembershipRole } from "~/generated/browser";
+ import { createRoutesStub, render, screen } from "~/test/react-test-utils";
+ import type { Factory } from "~/utils/types";
+ 
+diff --git a/app/features/organizations/settings/team-members/team-members-table.tsx b/app/features/organizations/settings/team-members/team-members-table.tsx
+index 80c0ccf..261f402 100644
+--- a/app/features/organizations/settings/team-members/team-members-table.tsx
++++ b/app/features/organizations/settings/team-members/team-members-table.tsx
+@@ -1,5 +1,3 @@
+-import type { OrganizationMembership, UserAccount } from "@prisma/client";
+-import { OrganizationMembershipRole } from "@prisma/client";
+ import type { ColumnDef } from "@tanstack/react-table";
+ import {
+   flexRender,
+@@ -56,6 +54,8 @@ import {
+   TableHeader,
+   TableRow,
+ } from "~/components/ui/table";
++import type { OrganizationMembership, UserAccount } from "~/generated/browser";
++import { OrganizationMembershipRole } from "~/generated/browser";
+ 
+ export type Member = {
+   avatar: UserAccount["imageUrl"];
+diff --git a/app/features/user-accounts/settings/account/account-settings-helpers.server.test.ts b/app/features/user-accounts/settings/account/account-settings-helpers.server.test.ts
+index d785654..eac12e7 100644
+--- a/app/features/user-accounts/settings/account/account-settings-helpers.server.test.ts
++++ b/app/features/user-accounts/settings/account/account-settings-helpers.server.test.ts
+@@ -1,9 +1,9 @@
+-import { OrganizationMembershipRole } from "@prisma/client";
+ import { describe, expect, test } from "vitest";
+ 
+ import { mapUserAccountWithMembershipsToDangerZoneProps } from "./account-settings-helpers.server";
+ import { createPopulatedOrganization } from "~/features/organizations/organizations-factories.server";
+ import { createPopulatedUserAccount } from "~/features/user-accounts/user-accounts-factories.server";
++import { OrganizationMembershipRole } from "~/generated/client";
+ 
+ describe("mapUserAccountWithMembershipsToDangerZoneProps()", () => {
+   test("given: a user account with no memberships, should: return danger zone props with empty arrays", () => {
+diff --git a/app/features/user-accounts/settings/account/account-settings-helpers.server.ts b/app/features/user-accounts/settings/account/account-settings-helpers.server.ts
+index 6fe1b81..b75ef9a 100644
+--- a/app/features/user-accounts/settings/account/account-settings-helpers.server.ts
++++ b/app/features/user-accounts/settings/account/account-settings-helpers.server.ts
+@@ -1,11 +1,11 @@
+-import { OrganizationMembershipRole } from "@prisma/client";
+-import type { Return } from "@prisma/client/runtime/library";
++import type { Return } from "@prisma/client/runtime/client";
+ import type { FileUpload } from "@remix-run/form-data-parser";
+ import type { SupabaseClient } from "@supabase/supabase-js";
+ 
+ import { AVATAR_PATH_PREFIX, BUCKET_NAME } from "../../user-account-constants";
+ import type { requireAuthenticatedUserWithMembershipsExists } from "../../user-accounts-helpers.server";
+ import type { DangerZoneProps } from "./danger-zone";
++import { OrganizationMembershipRole } from "~/generated/client";
+ import { createAdminS3Client } from "~/utils/s3.server";
+ import { uploadToStorage } from "~/utils/storage.server";
+ 
+diff --git a/app/features/user-accounts/settings/account/account-settings.tsx b/app/features/user-accounts/settings/account/account-settings.tsx
+index 83f159e..f836b28 100644
+--- a/app/features/user-accounts/settings/account/account-settings.tsx
++++ b/app/features/user-accounts/settings/account/account-settings.tsx
+@@ -1,7 +1,6 @@
+ import type { SubmissionResult } from "@conform-to/react/future";
+ import { useForm } from "@conform-to/react/future";
+ import { coerceFormValue } from "@conform-to/zod/v4/future";
+-import type { UserAccount } from "@prisma/client";
+ import { UserIcon } from "lucide-react";
+ import { useTranslation } from "react-i18next";
+ import { Form, useNavigation } from "react-router";
+@@ -28,6 +27,7 @@ import {
+ } from "~/components/ui/field";
+ import { Input } from "~/components/ui/input";
+ import { Spinner } from "~/components/ui/spinner";
++import type { UserAccount } from "~/generated/browser";
+ 
+ const ONE_MB = 1_000_000;
+ 
+diff --git a/app/features/user-accounts/settings/account/danger-zone.tsx b/app/features/user-accounts/settings/account/danger-zone.tsx
+index e313a1e..9234459 100644
+--- a/app/features/user-accounts/settings/account/danger-zone.tsx
++++ b/app/features/user-accounts/settings/account/danger-zone.tsx
+@@ -1,4 +1,3 @@
+-import type { Organization } from "@prisma/client";
+ import { Trans, useTranslation } from "react-i18next";
+ import { Form } from "react-router";
+ 
+@@ -21,6 +20,7 @@ import {
+   ItemTitle,
+ } from "~/components/ui/item";
+ import { Spinner } from "~/components/ui/spinner";
++import type { Organization } from "~/generated/browser";
+ import { cn } from "~/lib/utils";
+ 
+ export const DELETE_USER_ACCOUNT_INTENT = "delete-user-account";
+diff --git a/app/features/user-accounts/user-accounts-factories.server.ts b/app/features/user-accounts/user-accounts-factories.server.ts
+index 5231b43..6ac77ce 100644
+--- a/app/features/user-accounts/user-accounts-factories.server.ts
++++ b/app/features/user-accounts/user-accounts-factories.server.ts
+@@ -1,7 +1,7 @@
+ import { faker } from "@faker-js/faker";
+ import { createId } from "@paralleldrive/cuid2";
+-import type { UserAccount } from "@prisma/client";
+ 
++import type { UserAccount } from "~/generated/client";
+ import type { Factory } from "~/utils/types";
+ 
+ /**
+diff --git a/app/features/user-accounts/user-accounts-helpers.server.ts b/app/features/user-accounts/user-accounts-helpers.server.ts
+index 60908b1..979634d 100644
+--- a/app/features/user-accounts/user-accounts-helpers.server.ts
++++ b/app/features/user-accounts/user-accounts-helpers.server.ts
+@@ -1,4 +1,3 @@
+-import type { UserAccount } from "@prisma/client";
+ import type { RouterContextProvider } from "react-router";
+ 
+ import { logout } from "../user-authentication/user-authentication-helpers.server";
+@@ -8,6 +7,7 @@ import {
+   retrieveUserAccountWithMembershipsAndMemberCountsAndSubscriptionsFromDatabaseBySupabaseUserId,
+   retrieveUserAccountWithMembershipsAndMemberCountsFromDatabaseBySupabaseUserId,
+ } from "./user-accounts-model.server";
++import type { UserAccount } from "~/generated/client";
+ 
+ /**
+  * Ensures that a user account is present.
+diff --git a/app/features/user-accounts/user-accounts-model.server.ts b/app/features/user-accounts/user-accounts-model.server.ts
+index 3701d25..eebfff9 100644
+--- a/app/features/user-accounts/user-accounts-model.server.ts
++++ b/app/features/user-accounts/user-accounts-model.server.ts
+@@ -1,5 +1,4 @@
+-import type { Prisma, UserAccount } from "@prisma/client";
+-
++import type { Prisma, UserAccount } from "~/generated/client";
+ import { prisma } from "~/utils/database.server";
+ 
+ /* CREATE */
+diff --git a/app/routes/_authenticated-routes+/onboarding+/organization.spec.ts b/app/routes/_authenticated-routes+/onboarding+/organization.spec.ts
+index e848156..0970d9e 100644
+--- a/app/routes/_authenticated-routes+/onboarding+/organization.spec.ts
++++ b/app/routes/_authenticated-routes+/onboarding+/organization.spec.ts
+@@ -303,20 +303,20 @@ describe("/onboarding/organization route action", () => {
+         },
+         given: "a too short name with whitespace",
+       },
+-    ])(
+-      "given: $given, should: return a 400 status code with an error message",
+-      async ({ body, expected }) => {
+-        const { userAccount } = await setup();
+-
+-        const formData = toFormData(body);
+-        const response = await sendAuthenticatedRequest({
+-          formData,
+-          userAccount,
+-        });
+-
+-        expect(response).toMatchObject(expected);
+-      },
+-    );
++    ])("given: $given, should: return a 400 status code with an error message", async ({
++      body,
++      expected,
++    }) => {
++      const { userAccount } = await setup();
++
++      const formData = toFormData(body);
++      const response = await sendAuthenticatedRequest({
++        formData,
++        userAccount,
++      });
++
++      expect(response).toMatchObject(expected);
++    });
+ 
+     test("given: a valid name, should: create organization", async () => {
+       const { userAccount } = await setup();
+diff --git a/app/routes/_authenticated-routes+/onboarding+/user-account.spec.ts b/app/routes/_authenticated-routes+/onboarding+/user-account.spec.ts
+index 52d06e8..60a11a0 100644
+--- a/app/routes/_authenticated-routes+/onboarding+/user-account.spec.ts
++++ b/app/routes/_authenticated-routes+/onboarding+/user-account.spec.ts
+@@ -256,25 +256,25 @@ describe("/onboarding/user-account route action", () => {
+         },
+         given: "a too short name with whitespace",
+       },
+-    ])(
+-      "given: $given, should: return a 400 status code with an error message",
+-      async ({ body, expected }) => {
+-        const userAccount = createPopulatedUserAccount({ name: "" });
+-        await saveUserAccountToDatabase(userAccount);
+-        onTestFinished(async () => {
+-          await deleteUserAccountFromDatabaseById(userAccount.id);
+-        });
+-
+-        const formData = toFormData(body);
+-
+-        const actual = await sendAuthenticatedRequest({
+-          formData,
+-          userAccount,
+-        });
+-
+-        expect(actual).toMatchObject(expected);
+-      },
+-    );
++    ])("given: $given, should: return a 400 status code with an error message", async ({
++      body,
++      expected,
++    }) => {
++      const userAccount = createPopulatedUserAccount({ name: "" });
++      await saveUserAccountToDatabase(userAccount);
++      onTestFinished(async () => {
++        await deleteUserAccountFromDatabaseById(userAccount.id);
++      });
++
++      const formData = toFormData(body);
++
++      const actual = await sendAuthenticatedRequest({
++        formData,
++        userAccount,
++      });
++
++      expect(actual).toMatchObject(expected);
++    });
+ 
+     test("given: a user who needs onboarding with a invite link session info in the request, should: redirect to the organizations dashboard page and show a toast", async () => {
+       // The user who was invited and just picked their name.
+diff --git a/app/routes/_authenticated-routes+/organizations_+/$organizationSlug+/_sidebar-layout.spec.ts b/app/routes/_authenticated-routes+/organizations_+/$organizationSlug+/_sidebar-layout.spec.ts
+index 97b6574..96b105b 100644
+--- a/app/routes/_authenticated-routes+/organizations_+/$organizationSlug+/_sidebar-layout.spec.ts
++++ b/app/routes/_authenticated-routes+/organizations_+/$organizationSlug+/_sidebar-layout.spec.ts
+@@ -1,6 +1,5 @@
+ /** biome-ignore-all lint/style/noNonNullAssertion: test code */
+-import type { Organization, UserAccount } from "@prisma/client";
+-import { OrganizationMembershipRole } from "@prisma/client";
++
+ import { data, href } from "react-router";
+ import { describe, expect, onTestFinished, test } from "vitest";
+ 
+@@ -35,6 +34,8 @@ import {
+   deleteUserAccountFromDatabaseById,
+   saveUserAccountToDatabase,
+ } from "~/features/user-accounts/user-accounts-model.server";
++import type { Organization, UserAccount } from "~/generated/client";
++import { OrganizationMembershipRole } from "~/generated/client";
+ import { stripeHandlers } from "~/test/mocks/handlers/stripe";
+ import { supabaseHandlers } from "~/test/mocks/handlers/supabase";
+ import { setupMockServerLifecycle } from "~/test/msw-test-utils";
+@@ -566,90 +567,81 @@ describe("/organizations/:organizationSlug route action", () => {
+     test.each([
+       OrganizationMembershipRole.admin,
+       OrganizationMembershipRole.owner,
+-    ])(
+-      "given: a valid request from a %s, but their organization already has a subscription, should: return a 409",
+-      async (role) => {
+-        const { user, organization } = await setupUserWithOrgAndAddAsMember({
+-          role,
+-        });
++    ])("given: a valid request from a %s, but their organization already has a subscription, should: return a 409", async (role) => {
++      const { user, organization } = await setupUserWithOrgAndAddAsMember({
++        role,
++      });
+ 
+-        const actual = (await sendAuthenticatedRequest({
+-          formData: toFormData({ intent, lookupKey: getRandomLookupKey() }),
+-          organizationSlug: organization.slug,
+-          user,
+-        })) as DataWithResponseInit<object>;
+-        const expected = conflict();
++      const actual = (await sendAuthenticatedRequest({
++        formData: toFormData({ intent, lookupKey: getRandomLookupKey() }),
++        organizationSlug: organization.slug,
++        user,
++      })) as DataWithResponseInit<object>;
++      const expected = conflict();
+ 
+-        expect(actual).toEqual(expected);
+-      },
+-    );
++      expect(actual).toEqual(expected);
++    });
+ 
+     test.each([
+       OrganizationMembershipRole.admin,
+       OrganizationMembershipRole.owner,
+-    ])(
+-      "given: a valid request from a %s, but their organization has too many members for the chosen plan, should: return a 409",
+-      async (role) => {
+-        const { user, organization } =
+-          await setupUserWithTrialOrgAndAddAsMember({
+-            role,
+-          });
+-        const otherUser = createPopulatedUserAccount();
+-        await saveUserAccountToDatabase(otherUser);
+-        await addMembersToOrganizationInDatabaseById({
+-          id: organization.id,
+-          members: [otherUser.id],
+-        });
+-        onTestFinished(async () => {
+-          await deleteUserAccountFromDatabaseById(otherUser.id);
+-        });
++    ])("given: a valid request from a %s, but their organization has too many members for the chosen plan, should: return a 409", async (role) => {
++      const { user, organization } = await setupUserWithTrialOrgAndAddAsMember({
++        role,
++      });
++      const otherUser = createPopulatedUserAccount();
++      await saveUserAccountToDatabase(otherUser);
++      await addMembersToOrganizationInDatabaseById({
++        id: organization.id,
++        members: [otherUser.id],
++      });
++      onTestFinished(async () => {
++        await deleteUserAccountFromDatabaseById(otherUser.id);
++      });
+ 
+-        const actual = (await sendAuthenticatedRequest({
+-          formData: toFormData({
+-            intent,
+-            lookupKey: priceLookupKeysByTierAndInterval.low.monthly,
+-          }),
+-          organizationSlug: organization.slug,
+-          user,
+-        })) as DataWithResponseInit<object>;
+-        const expected = conflict();
++      const actual = (await sendAuthenticatedRequest({
++        formData: toFormData({
++          intent,
++          lookupKey: priceLookupKeysByTierAndInterval.low.monthly,
++        }),
++        organizationSlug: organization.slug,
++        user,
++      })) as DataWithResponseInit<object>;
++      const expected = conflict();
+ 
+-        expect(actual).toEqual(expected);
+-      },
+-    );
++      expect(actual).toEqual(expected);
++    });
+ 
+     test.each([
+       OrganizationMembershipRole.admin,
+       OrganizationMembershipRole.owner,
+-    ])(
+-      "given: a valid request from a %s, should: return a 302 and redirect to the customer portal",
+-      async (role) => {
+-        let checkoutSessionCalled = false;
+-        const checkoutListener = ({ request }: { request: Request }) => {
+-          if (new URL(request.url).pathname === "/v1/checkout/sessions") {
+-            checkoutSessionCalled = true;
+-          }
+-        };
+-        server.events.on("response:mocked", checkoutListener);
+-        onTestFinished(() => {
+-          server.events.removeListener("response:mocked", checkoutListener);
+-        });
++    ])("given: a valid request from a %s, should: return a 302 and redirect to the customer portal", async (role) => {
++      let checkoutSessionCalled = false;
++      const checkoutListener = ({ request }: { request: Request }) => {
++        if (new URL(request.url).pathname === "/v1/checkout/sessions") {
++          checkoutSessionCalled = true;
++        }
++      };
++      server.events.on("response:mocked", checkoutListener);
++      onTestFinished(() => {
++        server.events.removeListener("response:mocked", checkoutListener);
++      });
+ 
+-        const { user, organization } =
+-          await setupUserWithTrialOrgAndAddAsMember({ role });
++      const { user, organization } = await setupUserWithTrialOrgAndAddAsMember({
++        role,
++      });
+ 
+-        const response = (await sendAuthenticatedRequest({
+-          formData: toFormData({ intent, lookupKey: getRandomLookupKey() }),
+-          organizationSlug: organization.slug,
+-          user,
+-        })) as Response;
++      const response = (await sendAuthenticatedRequest({
++        formData: toFormData({ intent, lookupKey: getRandomLookupKey() }),
++        organizationSlug: organization.slug,
++        user,
++      })) as Response;
+ 
+-        expect(response.status).toEqual(302);
+-        expect(response.headers.get("Location")).toMatch(
+-          /^https:\/\/checkout\.stripe\.com\/pay\/cs_[\dA-Za-z]+(?:\?.*)?$/,
+-        );
+-        expect(checkoutSessionCalled).toEqual(true);
+-      },
+-    );
++      expect(response.status).toEqual(302);
++      expect(response.headers.get("Location")).toMatch(
++        /^https:\/\/checkout\.stripe\.com\/pay\/cs_[\dA-Za-z]+(?:\?.*)?$/,
++      );
++      expect(checkoutSessionCalled).toEqual(true);
++    });
+   });
+ });
+diff --git a/app/routes/_authenticated-routes+/organizations_+/$organizationSlug+/settings+/billing.spec.ts b/app/routes/_authenticated-routes+/organizations_+/$organizationSlug+/settings+/billing.spec.ts
+index 70ca183..17f47f4 100644
+--- a/app/routes/_authenticated-routes+/organizations_+/$organizationSlug+/settings+/billing.spec.ts
++++ b/app/routes/_authenticated-routes+/organizations_+/$organizationSlug+/settings+/billing.spec.ts
+@@ -1,6 +1,5 @@
+ /** biome-ignore-all lint/style/noNonNullAssertion: test code */
+-import type { Organization, UserAccount } from "@prisma/client";
+-import { OrganizationMembershipRole } from "@prisma/client";
++
+ import { describe, expect, onTestFinished, test } from "vitest";
+ 
+ import { action } from "./billing";
+@@ -32,6 +31,8 @@ import {
+   deleteUserAccountFromDatabaseById,
+   saveUserAccountToDatabase,
+ } from "~/features/user-accounts/user-accounts-model.server";
++import type { Organization, UserAccount } from "~/generated/client";
++import { OrganizationMembershipRole } from "~/generated/client";
+ import { stripeHandlers } from "~/test/mocks/handlers/stripe";
+ import { supabaseHandlers } from "~/test/mocks/handlers/supabase";
+ import { setupMockServerLifecycle } from "~/test/msw-test-utils";
+@@ -161,38 +162,35 @@ describe("/organizations/:organizationSlug/settings/billing route action", () =>
+     test.each([
+       OrganizationMembershipRole.admin,
+       OrganizationMembershipRole.owner,
+-    ])(
+-      "given: a valid request from a %s, should: return a 302 and redirect to the customer portal",
+-      async (role) => {
+-        // listen for the Stripe "cancel subscription" POST
+-        let stripeCancelCalled = false;
+-        const cancelListener = ({ request }: { request: Request }) => {
+-          if (new URL(request.url).pathname === "/v1/billing_portal/sessions") {
+-            stripeCancelCalled = true;
+-          }
+-        };
+-        server.events.on("response:mocked", cancelListener);
+-        onTestFinished(() => {
+-          server.events.removeListener("response:mocked", cancelListener);
+-        });
++    ])("given: a valid request from a %s, should: return a 302 and redirect to the customer portal", async (role) => {
++      // listen for the Stripe "cancel subscription" POST
++      let stripeCancelCalled = false;
++      const cancelListener = ({ request }: { request: Request }) => {
++        if (new URL(request.url).pathname === "/v1/billing_portal/sessions") {
++          stripeCancelCalled = true;
++        }
++      };
++      server.events.on("response:mocked", cancelListener);
++      onTestFinished(() => {
++        server.events.removeListener("response:mocked", cancelListener);
++      });
+ 
+-        const { user, organization } = await setupUserWithOrgAndAddAsMember({
+-          role,
+-        });
++      const { user, organization } = await setupUserWithOrgAndAddAsMember({
++        role,
++      });
+ 
+-        const actual = (await sendAuthenticatedRequest({
+-          formData: toFormData({ intent }),
+-          organizationSlug: organization.slug,
+-          user,
+-        })) as Response;
++      const actual = (await sendAuthenticatedRequest({
++        formData: toFormData({ intent }),
++        organizationSlug: organization.slug,
++        user,
++      })) as Response;
+ 
+-        expect(actual.status).toEqual(302);
+-        expect(actual.headers.get("Location")).toMatch(
+-          /^https:\/\/billing\.stripe\.com\/p\/session\/\w+(?:\?.*)?$/,
+-        );
+-        expect(stripeCancelCalled).toEqual(true);
+-      },
+-    );
++      expect(actual.status).toEqual(302);
++      expect(actual.headers.get("Location")).toMatch(
++        /^https:\/\/billing\.stripe\.com\/p\/session\/\w+(?:\?.*)?$/,
++      );
++      expect(stripeCancelCalled).toEqual(true);
++    });
+   });
+ 
+   describe(`${KEEP_CURRENT_SUBSCRIPTION_INTENT} intent`, () => {
+@@ -215,92 +213,85 @@ describe("/organizations/:organizationSlug/settings/billing route action", () =>
+     test.each([
+       OrganizationMembershipRole.admin,
+       OrganizationMembershipRole.owner,
+-    ])(
+-      "given: a %s role without pending schedule, should: return a 200 and NOT call the release endpoint",
+-      async (role) => {
+-        let releaseCalled = false;
+-        const listener = ({ request }: { request: Request }) => {
+-          if (
+-            /^\/v1\/subscription_schedules\/.+\/release$/.test(
+-              new URL(request.url).pathname,
+-            )
+-          ) {
+-            releaseCalled = true;
+-          }
+-        };
+-        server.events.on("response:mocked", listener);
+-        onTestFinished(() => {
+-          server.events.removeListener("response:mocked", listener);
+-        });
++    ])("given: a %s role without pending schedule, should: return a 200 and NOT call the release endpoint", async (role) => {
++      let releaseCalled = false;
++      const listener = ({ request }: { request: Request }) => {
++        if (
++          /^\/v1\/subscription_schedules\/.+\/release$/.test(
++            new URL(request.url).pathname,
++          )
++        ) {
++          releaseCalled = true;
++        }
++      };
++      server.events.on("response:mocked", listener);
++      onTestFinished(() => {
++        server.events.removeListener("response:mocked", listener);
++      });
+ 
+-        const { user, organization } = await setupUserWithOrgAndAddAsMember({
+-          role,
+-        });
++      const { user, organization } = await setupUserWithOrgAndAddAsMember({
++        role,
++      });
+ 
+-        const response = (await sendAuthenticatedRequest({
+-          formData: toFormData({ intent }),
+-          organizationSlug: organization.slug,
+-          user,
+-        })) as DataWithResponseInit<object>;
++      const response = (await sendAuthenticatedRequest({
++        formData: toFormData({ intent }),
++        organizationSlug: organization.slug,
++        user,
++      })) as DataWithResponseInit<object>;
+ 
+-        expect(response.data).toEqual({});
+-        expect(releaseCalled).toEqual(false);
+-      },
+-    );
++      expect(response.data).toEqual({});
++      expect(releaseCalled).toEqual(false);
++    });
+ 
+     test.each([
+       OrganizationMembershipRole.admin,
+       OrganizationMembershipRole.owner,
+-    ])(
+-      "given: a %s role with pending schedule, should: return a 200, call the release endpoint and delete the schedule from the database",
+-      async (role) => {
+-        let releaseCalled = false;
+-        const listener = ({ request }: { request: Request }) => {
+-          if (
+-            /^\/v1\/subscription_schedules\/.+\/release$/.test(
+-              new URL(request.url).pathname,
+-            )
+-          ) {
+-            releaseCalled = true;
+-          }
+-        };
+-        server.events.on("response:mocked", listener);
+-        onTestFinished(() => {
+-          server.events.removeListener("response:mocked", listener);
++    ])("given: a %s role with pending schedule, should: return a 200, call the release endpoint and delete the schedule from the database", async (role) => {
++      let releaseCalled = false;
++      const listener = ({ request }: { request: Request }) => {
++        if (
++          /^\/v1\/subscription_schedules\/.+\/release$/.test(
++            new URL(request.url).pathname,
++          )
++        ) {
++          releaseCalled = true;
++        }
++      };
++      server.events.on("response:mocked", listener);
++      onTestFinished(() => {
++        server.events.removeListener("response:mocked", listener);
++      });
++
++      const { user, organization, subscription } =
++        await setupUserWithOrgAndAddAsMember({
++          lookupKey: priceLookupKeysByTierAndInterval.mid.monthly,
++          role,
++        });
++      const price = await retrieveStripePriceFromDatabaseByLookupKey(
++        priceLookupKeysByTierAndInterval.low.monthly,
++      );
++      const subscriptionSchedule =
++        createPopulatedStripeSubscriptionScheduleWithPhasesAndPrice({
++          phases: [{ price: price! }],
++          subscriptionId: subscription.stripeId,
+         });
++      await saveSubscriptionScheduleWithPhasesAndPriceToDatabase(
++        subscriptionSchedule,
++      );
+ 
+-        const { user, organization, subscription } =
+-          await setupUserWithOrgAndAddAsMember({
+-            lookupKey: priceLookupKeysByTierAndInterval.mid.monthly,
+-            role,
+-          });
+-        const price = await retrieveStripePriceFromDatabaseByLookupKey(
+-          priceLookupKeysByTierAndInterval.low.monthly,
+-        );
+-        const subscriptionSchedule =
+-          createPopulatedStripeSubscriptionScheduleWithPhasesAndPrice({
+-            phases: [{ price: price! }],
+-            subscriptionId: subscription.stripeId,
+-          });
+-        await saveSubscriptionScheduleWithPhasesAndPriceToDatabase(
+-          subscriptionSchedule,
+-        );
++      const response = (await sendAuthenticatedRequest({
++        formData: toFormData({ intent }),
++        organizationSlug: organization.slug,
++        user,
++      })) as DataWithResponseInit<object>;
+ 
+-        const response = (await sendAuthenticatedRequest({
+-          formData: toFormData({ intent }),
+-          organizationSlug: organization.slug,
+-          user,
+-        })) as DataWithResponseInit<object>;
+-
+-        expect(response.data).toEqual({});
+-        expect(releaseCalled).toEqual(true);
+-        const schedule =
+-          await retrieveStripeSubscriptionScheduleFromDatabaseById(
+-            subscriptionSchedule.stripeId,
+-          );
+-        expect(schedule).toEqual(null);
+-      },
+-    );
++      expect(response.data).toEqual({});
++      expect(releaseCalled).toEqual(true);
++      const schedule = await retrieveStripeSubscriptionScheduleFromDatabaseById(
++        subscriptionSchedule.stripeId,
++      );
++      expect(schedule).toEqual(null);
++    });
+   });
+ 
+   describe(`${OPEN_CHECKOUT_SESSION_INTENT} intent`, () => {
+@@ -324,116 +315,109 @@ describe("/organizations/:organizationSlug/settings/billing route action", () =>
+     test.each([
+       OrganizationMembershipRole.admin,
+       OrganizationMembershipRole.owner,
+-    ])(
+-      "given: a valid request from a %s, should: return a 302 and redirect to the customer portal",
+-      async (role) => {
+-        let checkoutSessionCalled = false;
+-        const checkoutListener = ({ request }: { request: Request }) => {
+-          if (new URL(request.url).pathname === "/v1/checkout/sessions") {
+-            checkoutSessionCalled = true;
+-          }
+-        };
+-        server.events.on("response:mocked", checkoutListener);
+-        onTestFinished(() => {
+-          server.events.removeListener("response:mocked", checkoutListener);
+-        });
++    ])("given: a valid request from a %s, should: return a 302 and redirect to the customer portal", async (role) => {
++      let checkoutSessionCalled = false;
++      const checkoutListener = ({ request }: { request: Request }) => {
++        if (new URL(request.url).pathname === "/v1/checkout/sessions") {
++          checkoutSessionCalled = true;
++        }
++      };
++      server.events.on("response:mocked", checkoutListener);
++      onTestFinished(() => {
++        server.events.removeListener("response:mocked", checkoutListener);
++      });
+ 
+-        const { user, organization } =
+-          await setupUserWithTrialOrgAndAddAsMember({ role });
++      const { user, organization } = await setupUserWithTrialOrgAndAddAsMember({
++        role,
++      });
+ 
+-        const response = (await sendAuthenticatedRequest({
+-          formData: toFormData({ intent, lookupKey: getRandomLookupKey() }),
+-          organizationSlug: organization.slug,
+-          user,
+-        })) as Response;
++      const response = (await sendAuthenticatedRequest({
++        formData: toFormData({ intent, lookupKey: getRandomLookupKey() }),
++        organizationSlug: organization.slug,
++        user,
++      })) as Response;
+ 
+-        expect(response.status).toEqual(302);
+-        expect(response.headers.get("Location")).toMatch(
+-          /^https:\/\/checkout\.stripe\.com\/pay\/cs_[\dA-Za-z]+(?:\?.*)?$/,
+-        );
+-        expect(checkoutSessionCalled).toEqual(true);
+-      },
+-    );
++      expect(response.status).toEqual(302);
++      expect(response.headers.get("Location")).toMatch(
++        /^https:\/\/checkout\.stripe\.com\/pay\/cs_[\dA-Za-z]+(?:\?.*)?$/,
++      );
++      expect(checkoutSessionCalled).toEqual(true);
++    });
+ 
+     test.each([
+       OrganizationMembershipRole.admin,
+       OrganizationMembershipRole.owner,
+-    ])(
+-      "given: a valid request from a %s, but their organization has too many members for the chosen plan, should: return a 409",
+-      async (role) => {
+-        let checkoutSessionCalled = false;
+-        const checkoutListener = ({ request }: { request: Request }) => {
+-          if (new URL(request.url).pathname === "/v1/checkout/sessions") {
+-            checkoutSessionCalled = true;
+-          }
+-        };
+-        server.events.on("response:mocked", checkoutListener);
+-        onTestFinished(() => {
+-          server.events.removeListener("response:mocked", checkoutListener);
+-        });
++    ])("given: a valid request from a %s, but their organization has too many members for the chosen plan, should: return a 409", async (role) => {
++      let checkoutSessionCalled = false;
++      const checkoutListener = ({ request }: { request: Request }) => {
++        if (new URL(request.url).pathname === "/v1/checkout/sessions") {
++          checkoutSessionCalled = true;
++        }
++      };
++      server.events.on("response:mocked", checkoutListener);
++      onTestFinished(() => {
++        server.events.removeListener("response:mocked", checkoutListener);
++      });
+ 
+-        const { user, organization } =
+-          await setupUserWithTrialOrgAndAddAsMember({ role });
+-        const otherUser = createPopulatedUserAccount();
+-        await saveUserAccountToDatabase(otherUser);
+-        await addMembersToOrganizationInDatabaseById({
+-          id: organization.id,
+-          members: [otherUser.id],
+-        });
+-        onTestFinished(async () => {
+-          await deleteUserAccountFromDatabaseById(otherUser.id);
+-        });
++      const { user, organization } = await setupUserWithTrialOrgAndAddAsMember({
++        role,
++      });
++      const otherUser = createPopulatedUserAccount();
++      await saveUserAccountToDatabase(otherUser);
++      await addMembersToOrganizationInDatabaseById({
++        id: organization.id,
++        members: [otherUser.id],
++      });
++      onTestFinished(async () => {
++        await deleteUserAccountFromDatabaseById(otherUser.id);
++      });
+ 
+-        const actual = (await sendAuthenticatedRequest({
+-          formData: toFormData({
+-            intent,
+-            lookupKey: priceLookupKeysByTierAndInterval.low.monthly,
+-          }),
+-          organizationSlug: organization.slug,
+-          user,
+-        })) as DataWithResponseInit<{ message: string }>;
+-        const expected = conflict();
++      const actual = (await sendAuthenticatedRequest({
++        formData: toFormData({
++          intent,
++          lookupKey: priceLookupKeysByTierAndInterval.low.monthly,
++        }),
++        organizationSlug: organization.slug,
++        user,
++      })) as DataWithResponseInit<{ message: string }>;
++      const expected = conflict();
+ 
+-        expect(actual).toEqual(expected);
+-        expect(checkoutSessionCalled).toEqual(false);
+-      },
+-    );
++      expect(actual).toEqual(expected);
++      expect(checkoutSessionCalled).toEqual(false);
++    });
+ 
+     test.each([
+       OrganizationMembershipRole.admin,
+       OrganizationMembershipRole.owner,
+-    ])(
+-      "given: a valid request from a %s, but their organization already has a subscription, should: return a 409",
+-      async (role) => {
+-        let checkoutSessionCalled = false;
+-        const checkoutListener = ({ request }: { request: Request }) => {
+-          if (new URL(request.url).pathname === "/v1/checkout/sessions") {
+-            checkoutSessionCalled = true;
+-          }
+-        };
+-        server.events.on("response:mocked", checkoutListener);
+-        onTestFinished(() => {
+-          server.events.removeListener("response:mocked", checkoutListener);
+-        });
++    ])("given: a valid request from a %s, but their organization already has a subscription, should: return a 409", async (role) => {
++      let checkoutSessionCalled = false;
++      const checkoutListener = ({ request }: { request: Request }) => {
++        if (new URL(request.url).pathname === "/v1/checkout/sessions") {
++          checkoutSessionCalled = true;
++        }
++      };
++      server.events.on("response:mocked", checkoutListener);
++      onTestFinished(() => {
++        server.events.removeListener("response:mocked", checkoutListener);
++      });
+ 
+-        const { user, organization } = await setupUserWithOrgAndAddAsMember({
+-          role,
+-        });
++      const { user, organization } = await setupUserWithOrgAndAddAsMember({
++        role,
++      });
+ 
+-        const actual = (await sendAuthenticatedRequest({
+-          formData: toFormData({
+-            intent,
+-            lookupKey: priceLookupKeysByTierAndInterval.low.monthly,
+-          }),
+-          organizationSlug: organization.slug,
+-          user,
+-        })) as DataWithResponseInit<{ message: string }>;
+-        const expected = conflict();
++      const actual = (await sendAuthenticatedRequest({
++        formData: toFormData({
++          intent,
++          lookupKey: priceLookupKeysByTierAndInterval.low.monthly,
++        }),
++        organizationSlug: organization.slug,
++        user,
++      })) as DataWithResponseInit<{ message: string }>;
++      const expected = conflict();
+ 
+-        expect(actual).toEqual(expected);
+-        expect(checkoutSessionCalled).toEqual(false);
+-      },
+-    );
++      expect(actual).toEqual(expected);
++      expect(checkoutSessionCalled).toEqual(false);
++    });
+   });
+ 
+   describe(`${RESUME_SUBSCRIPTION_INTENT} intent`, () => {
+@@ -457,47 +441,42 @@ describe("/organizations/:organizationSlug/settings/billing route action", () =>
+     test.each([
+       OrganizationMembershipRole.admin,
+       OrganizationMembershipRole.owner,
+-    ])(
+-      "given: a valid request from a %s and a subscription that is set to cancel at period end, should: return a 200 and call the update endpoint and update the subscription in the database",
+-      async (role) => {
+-        let resumeCalled = false;
+-        const listener = ({ request }: { request: Request }) => {
+-          if (
+-            new URL(request.url).pathname ===
+-            `/v1/subscriptions/${subscription.stripeId}`
+-          ) {
+-            resumeCalled = true;
+-          }
+-        };
+-        server.events.on("response:mocked", listener);
+-        onTestFinished(() => {
+-          server.events.removeListener("response:mocked", listener);
++    ])("given: a valid request from a %s and a subscription that is set to cancel at period end, should: return a 200 and call the update endpoint and update the subscription in the database", async (role) => {
++      let resumeCalled = false;
++      const listener = ({ request }: { request: Request }) => {
++        if (
++          new URL(request.url).pathname ===
++          `/v1/subscriptions/${subscription.stripeId}`
++        ) {
++          resumeCalled = true;
++        }
++      };
++      server.events.on("response:mocked", listener);
++      onTestFinished(() => {
++        server.events.removeListener("response:mocked", listener);
++      });
++
++      const { user, organization, subscription } =
++        await setupUserWithOrgAndAddAsMember({
++          role,
++          subscription: createPopulatedStripeSubscriptionWithItemsAndPrice({
++            cancelAtPeriodEnd: true,
++          }),
+         });
+ 
+-        const { user, organization, subscription } =
+-          await setupUserWithOrgAndAddAsMember({
+-            role,
+-            subscription: createPopulatedStripeSubscriptionWithItemsAndPrice({
+-              cancelAtPeriodEnd: true,
+-            }),
+-          });
+-
+-        const response = (await sendAuthenticatedRequest({
+-          formData: toFormData({ intent }),
+-          organizationSlug: organization.slug,
+-          user,
+-        })) as DataWithResponseInit<object>;
+-
+-        expect(response.data).toEqual({});
+-        expect(resumeCalled).toEqual(true);
+-
+-        const updatedSubscription =
+-          await retrieveStripeSubscriptionFromDatabaseById(
+-            subscription.stripeId,
+-          );
+-        expect(updatedSubscription?.cancelAtPeriodEnd).toEqual(false);
+-      },
+-    );
++      const response = (await sendAuthenticatedRequest({
++        formData: toFormData({ intent }),
++        organizationSlug: organization.slug,
++        user,
++      })) as DataWithResponseInit<object>;
++
++      expect(response.data).toEqual({});
++      expect(resumeCalled).toEqual(true);
++
++      const updatedSubscription =
++        await retrieveStripeSubscriptionFromDatabaseById(subscription.stripeId);
++      expect(updatedSubscription?.cancelAtPeriodEnd).toEqual(false);
++    });
+   });
+ 
+   describe(`${SWITCH_SUBSCRIPTION_INTENT} intent`, () => {
+@@ -533,22 +512,22 @@ describe("/organizations/:organizationSlug/settings/billing route action", () =>
+           },
+         }),
+       },
+-    ])(
+-      "given: invalid data $data, should: return validation errors",
+-      async ({ data, expected }) => {
+-        const { user, organization } = await setupUserWithOrgAndAddAsMember({
+-          role: OrganizationMembershipRole.admin,
+-        });
++    ])("given: invalid data $data, should: return validation errors", async ({
++      data,
++      expected,
++    }) => {
++      const { user, organization } = await setupUserWithOrgAndAddAsMember({
++        role: OrganizationMembershipRole.admin,
++      });
+ 
+-        const actual = (await sendAuthenticatedRequest({
+-          formData: toFormData({ intent, ...data }),
+-          organizationSlug: organization.slug,
+-          user,
+-        })) as DataWithResponseInit<object>;
++      const actual = (await sendAuthenticatedRequest({
++        formData: toFormData({ intent, ...data }),
++        organizationSlug: organization.slug,
++        user,
++      })) as DataWithResponseInit<object>;
+ 
+-        expect(actual).toMatchObject(expected);
+-      },
+-    );
++      expect(actual).toMatchObject(expected);
++    });
+ 
+     test("given: an invalid lookup key, should: return a bad request", async () => {
+       const { user, organization } = await setupUserWithOrgAndAddAsMember({
+@@ -571,41 +550,38 @@ describe("/organizations/:organizationSlug/settings/billing route action", () =>
+     test.each([
+       OrganizationMembershipRole.admin,
+       OrganizationMembershipRole.owner,
+-    ])(
+-      "given: a valid request from a %s, should: return a 302 and redirect to the customer portal",
+-      async (role) => {
+-        let switchSessionCalled = false;
+-        const switchListener = ({ request }: { request: Request }) => {
+-          if (new URL(request.url).pathname === "/v1/billing_portal/sessions") {
+-            switchSessionCalled = true;
+-          }
+-        };
+-        server.events.on("response:mocked", switchListener);
+-        onTestFinished(() => {
+-          server.events.removeListener("response:mocked", switchListener);
+-        });
++    ])("given: a valid request from a %s, should: return a 302 and redirect to the customer portal", async (role) => {
++      let switchSessionCalled = false;
++      const switchListener = ({ request }: { request: Request }) => {
++        if (new URL(request.url).pathname === "/v1/billing_portal/sessions") {
++          switchSessionCalled = true;
++        }
++      };
++      server.events.on("response:mocked", switchListener);
++      onTestFinished(() => {
++        server.events.removeListener("response:mocked", switchListener);
++      });
+ 
+-        const { user, organization } = await setupUserWithOrgAndAddAsMember({
+-          lookupKey: getRandomLookupKey(),
+-          role,
+-        });
++      const { user, organization } = await setupUserWithOrgAndAddAsMember({
++        lookupKey: getRandomLookupKey(),
++        role,
++      });
+ 
+-        const response = (await sendAuthenticatedRequest({
+-          formData: toFormData({
+-            intent,
+-            lookupKey: priceLookupKeysByTierAndInterval.low.monthly,
+-          }),
+-          organizationSlug: organization.slug,
+-          user,
+-        })) as Response;
++      const response = (await sendAuthenticatedRequest({
++        formData: toFormData({
++          intent,
++          lookupKey: priceLookupKeysByTierAndInterval.low.monthly,
++        }),
++        organizationSlug: organization.slug,
++        user,
++      })) as Response;
+ 
+-        expect(response.status).toEqual(302);
+-        expect(response.headers.get("Location")).toMatch(
+-          /^https:\/\/billing\.stripe\.com\/p\/session\/\w+(?:\?.*)?$/,
+-        );
+-        expect(switchSessionCalled).toEqual(true);
+-      },
+-    );
++      expect(response.status).toEqual(302);
++      expect(response.headers.get("Location")).toMatch(
++        /^https:\/\/billing\.stripe\.com\/p\/session\/\w+(?:\?.*)?$/,
++      );
++      expect(switchSessionCalled).toEqual(true);
++    });
+   });
+ 
+   describe(`${UPDATE_BILLING_EMAIL_INTENT} intent`, () => {
+@@ -655,99 +631,93 @@ describe("/organizations/:organizationSlug/settings/billing route action", () =>
+           },
+         }),
+       },
+-    ])(
+-      "given: invalid data $data, should: return validation errors",
+-      async ({ data, expected }) => {
+-        const { user, organization } = await setupUserWithOrgAndAddAsMember({
+-          role: OrganizationMembershipRole.admin,
+-        });
++    ])("given: invalid data $data, should: return validation errors", async ({
++      data,
++      expected,
++    }) => {
++      const { user, organization } = await setupUserWithOrgAndAddAsMember({
++        role: OrganizationMembershipRole.admin,
++      });
+ 
+-        const actual = (await sendAuthenticatedRequest({
+-          formData: toFormData({ intent, ...data }),
+-          organizationSlug: organization.slug,
+-          user,
+-        })) as DataWithResponseInit<object>;
++      const actual = (await sendAuthenticatedRequest({
++        formData: toFormData({ intent, ...data }),
++        organizationSlug: organization.slug,
++        user,
++      })) as DataWithResponseInit<object>;
+ 
+-        expect(actual).toMatchObject(expected);
+-      },
+-    );
++      expect(actual).toMatchObject(expected);
++    });
+ 
+     test.each([
+       OrganizationMembershipRole.admin,
+       OrganizationMembershipRole.owner,
+-    ])(
+-      "given: a valid request from a %s with a new email, should: update the billing email and return a 200",
+-      async (role) => {
+-        let updateCustomerCalled = false;
+-        const updateListener = ({ request }: { request: Request }) => {
+-          if (new URL(request.url).pathname.startsWith("/v1/customers")) {
+-            updateCustomerCalled = true;
+-          }
+-        };
+-        server.events.on("response:mocked", updateListener);
+-        onTestFinished(() => {
+-          server.events.removeListener("response:mocked", updateListener);
+-        });
++    ])("given: a valid request from a %s with a new email, should: update the billing email and return a 200", async (role) => {
++      let updateCustomerCalled = false;
++      const updateListener = ({ request }: { request: Request }) => {
++        if (new URL(request.url).pathname.startsWith("/v1/customers")) {
++          updateCustomerCalled = true;
++        }
++      };
++      server.events.on("response:mocked", updateListener);
++      onTestFinished(() => {
++        server.events.removeListener("response:mocked", updateListener);
++      });
+ 
+-        const { user, organization } = await setupUserWithOrgAndAddAsMember({
+-          organization: createPopulatedOrganization({
+-            billingEmail: "old@example.com",
+-          }),
+-          role,
+-        });
++      const { user, organization } = await setupUserWithOrgAndAddAsMember({
++        organization: createPopulatedOrganization({
++          billingEmail: "old@example.com",
++        }),
++        role,
++      });
+ 
+-        const response = (await sendAuthenticatedRequest({
+-          formData: toFormData({
+-            billingEmail: "new@example.com",
+-            intent,
+-          }),
+-          organizationSlug: organization.slug,
+-          user,
+-        })) as DataWithResponseInit<object>;
++      const response = (await sendAuthenticatedRequest({
++        formData: toFormData({
++          billingEmail: "new@example.com",
++          intent,
++        }),
++        organizationSlug: organization.slug,
++        user,
++      })) as DataWithResponseInit<object>;
+ 
+-        expect(response.data).toEqual({});
+-        expect(updateCustomerCalled).toEqual(true);
+-      },
+-    );
++      expect(response.data).toEqual({});
++      expect(updateCustomerCalled).toEqual(true);
++    });
+ 
+     test.each([
+       OrganizationMembershipRole.admin,
+       OrganizationMembershipRole.owner,
+-    ])(
+-      "given: a valid request from a %s with the same email, should: skip the update and return a 200",
+-      async (role) => {
+-        let updateCustomerCalled = false;
+-        const updateListener = ({ request }: { request: Request }) => {
+-          if (new URL(request.url).pathname.startsWith("/v1/customers")) {
+-            updateCustomerCalled = true;
+-          }
+-        };
+-        server.events.on("response:mocked", updateListener);
+-        onTestFinished(() => {
+-          server.events.removeListener("response:mocked", updateListener);
+-        });
++    ])("given: a valid request from a %s with the same email, should: skip the update and return a 200", async (role) => {
++      let updateCustomerCalled = false;
++      const updateListener = ({ request }: { request: Request }) => {
++        if (new URL(request.url).pathname.startsWith("/v1/customers")) {
++          updateCustomerCalled = true;
++        }
++      };
++      server.events.on("response:mocked", updateListener);
++      onTestFinished(() => {
++        server.events.removeListener("response:mocked", updateListener);
++      });
+ 
+-        const currentEmail = "same@example.com";
+-        const { user, organization } = await setupUserWithOrgAndAddAsMember({
+-          organization: createPopulatedOrganization({
+-            billingEmail: currentEmail,
+-          }),
+-          role,
+-        });
++      const currentEmail = "same@example.com";
++      const { user, organization } = await setupUserWithOrgAndAddAsMember({
++        organization: createPopulatedOrganization({
++          billingEmail: currentEmail,
++        }),
++        role,
++      });
+ 
+-        const response = (await sendAuthenticatedRequest({
+-          formData: toFormData({
+-            billingEmail: currentEmail,
+-            intent,
+-          }),
+-          organizationSlug: organization.slug,
+-          user,
+-        })) as DataWithResponseInit<object>;
++      const response = (await sendAuthenticatedRequest({
++        formData: toFormData({
++          billingEmail: currentEmail,
++          intent,
++        }),
++        organizationSlug: organization.slug,
++        user,
++      })) as DataWithResponseInit<object>;
+ 
+-        expect(response.data).toEqual({});
+-        expect(updateCustomerCalled).toEqual(false);
+-      },
+-    );
++      expect(response.data).toEqual({});
++      expect(updateCustomerCalled).toEqual(false);
++    });
+   });
+ 
+   describe(`${VIEW_INVOICES_INTENT} intent`, () => {
+@@ -771,36 +741,33 @@ describe("/organizations/:organizationSlug/settings/billing route action", () =>
+     test.each([
+       OrganizationMembershipRole.admin,
+       OrganizationMembershipRole.owner,
+-    ])(
+-      "given: a valid request from a %s, should: return a 302 and redirect to the customer portal",
+-      async (role) => {
+-        let portalSessionCalled = false;
+-        const portalListener = ({ request }: { request: Request }) => {
+-          if (new URL(request.url).pathname === "/v1/billing_portal/sessions") {
+-            portalSessionCalled = true;
+-          }
+-        };
+-        server.events.on("response:mocked", portalListener);
+-        onTestFinished(() => {
+-          server.events.removeListener("response:mocked", portalListener);
+-        });
++    ])("given: a valid request from a %s, should: return a 302 and redirect to the customer portal", async (role) => {
++      let portalSessionCalled = false;
++      const portalListener = ({ request }: { request: Request }) => {
++        if (new URL(request.url).pathname === "/v1/billing_portal/sessions") {
++          portalSessionCalled = true;
++        }
++      };
++      server.events.on("response:mocked", portalListener);
++      onTestFinished(() => {
++        server.events.removeListener("response:mocked", portalListener);
++      });
+ 
+-        const { user, organization } = await setupUserWithOrgAndAddAsMember({
+-          role,
+-        });
++      const { user, organization } = await setupUserWithOrgAndAddAsMember({
++        role,
++      });
+ 
+-        const response = (await sendAuthenticatedRequest({
+-          formData: toFormData({ intent }),
+-          organizationSlug: organization.slug,
+-          user,
+-        })) as Response;
++      const response = (await sendAuthenticatedRequest({
++        formData: toFormData({ intent }),
++        organizationSlug: organization.slug,
++        user,
++      })) as Response;
+ 
+-        expect(response.status).toEqual(302);
+-        expect(response.headers.get("Location")).toMatch(
+-          /^https:\/\/billing\.stripe\.com\/p\/session\/\w+(?:\?.*)?$/,
+-        );
+-        expect(portalSessionCalled).toEqual(true);
+-      },
+-    );
++      expect(response.status).toEqual(302);
++      expect(response.headers.get("Location")).toMatch(
++        /^https:\/\/billing\.stripe\.com\/p\/session\/\w+(?:\?.*)?$/,
++      );
++      expect(portalSessionCalled).toEqual(true);
++    });
+   });
+ });
+diff --git a/app/routes/_authenticated-routes+/organizations_+/$organizationSlug+/settings+/billing.tsx b/app/routes/_authenticated-routes+/organizations_+/$organizationSlug+/settings+/billing.tsx
+index 1f06c8e..d1432e0 100644
+--- a/app/routes/_authenticated-routes+/organizations_+/$organizationSlug+/settings+/billing.tsx
++++ b/app/routes/_authenticated-routes+/organizations_+/$organizationSlug+/settings+/billing.tsx
+@@ -1,4 +1,3 @@
+-import { OrganizationMembershipRole } from "@prisma/client";
+ import { data, href, useNavigation } from "react-router";
+ 
+ import type { Route } from "./+types/billing";
+@@ -19,6 +18,7 @@ import { BillingPage } from "~/features/billing/billing-page";
+ import { retrieveProductsFromDatabaseByPriceLookupKeys } from "~/features/billing/stripe-product-model.server";
+ import { getInstance } from "~/features/localization/i18next-middleware.server";
+ import { organizationMembershipContext } from "~/features/organizations/organizations-middleware.server";
++import { OrganizationMembershipRole } from "~/generated/browser";
+ import { getPageTitle } from "~/utils/get-page-title.server";
+ import { notFound } from "~/utils/http-responses.server";
+ 
+diff --git a/app/routes/_authenticated-routes+/organizations_+/$organizationSlug+/settings+/billing_.success.tsx b/app/routes/_authenticated-routes+/organizations_+/$organizationSlug+/settings+/billing_.success.tsx
+index e5691cb..7bdfc87 100644
+--- a/app/routes/_authenticated-routes+/organizations_+/$organizationSlug+/settings+/billing_.success.tsx
++++ b/app/routes/_authenticated-routes+/organizations_+/$organizationSlug+/settings+/billing_.success.tsx
+@@ -1,4 +1,3 @@
+-import { OrganizationMembershipRole } from "@prisma/client";
+ import confetti from "canvas-confetti";
+ import { BadgeCheckIcon } from "lucide-react";
+ import { useEffect } from "react";
+@@ -9,6 +8,7 @@ import type { Route } from "./+types/billing_.success";
+ import { Button } from "~/components/ui/button";
+ import { getInstance } from "~/features/localization/i18next-middleware.server";
+ import { organizationMembershipContext } from "~/features/organizations/organizations-middleware.server";
++import { OrganizationMembershipRole } from "~/generated/browser";
+ import { getPageTitle } from "~/utils/get-page-title.server";
+ import { notFound } from "~/utils/http-responses.server";
+ 
+diff --git a/app/routes/_authenticated-routes+/organizations_+/$organizationSlug+/settings+/general.spec.ts b/app/routes/_authenticated-routes+/organizations_+/$organizationSlug+/settings+/general.spec.ts
+index 924c4ba..78ef5be 100644
+--- a/app/routes/_authenticated-routes+/organizations_+/$organizationSlug+/settings+/general.spec.ts
++++ b/app/routes/_authenticated-routes+/organizations_+/$organizationSlug+/settings+/general.spec.ts
+@@ -1,5 +1,3 @@
+-import type { Organization, UserAccount } from "@prisma/client";
+-import { OrganizationMembershipRole } from "@prisma/client";
+ import { describe, expect, onTestFinished, test } from "vitest";
+ 
+ import { action } from "./general";
+@@ -9,6 +7,8 @@ import {
+   DELETE_ORGANIZATION_INTENT,
+   UPDATE_ORGANIZATION_INTENT,
+ } from "~/features/organizations/settings/general/general-settings-constants";
++import type { Organization, UserAccount } from "~/generated/client";
++import { OrganizationMembershipRole } from "~/generated/client";
+ import { stripeHandlers } from "~/test/mocks/handlers/stripe";
+ import { supabaseHandlers } from "~/test/mocks/handlers/supabase";
+ import { setupMockServerLifecycle } from "~/test/msw-test-utils";
+@@ -123,24 +123,23 @@ describe("/organizations/:organizationSlug/settings/general route action", () =>
+         given: "an admin",
+         role: OrganizationMembershipRole.admin,
+       },
+-    ])(
+-      "given: a user who is NOT an owner (but is a $given), should: return a 403",
+-      async ({ role }) => {
+-        const { user, organization } = await setupUserWithOrgAndAddAsMember({
+-          role,
+-        });
+-        const newName = createPopulatedOrganization().name;
+-
+-        const actual = await sendAuthenticatedRequest({
+-          formData: toFormData({ intent, name: newName }),
+-          organizationSlug: organization.slug,
+-          user,
+-        });
+-        const expected = forbidden();
+-
+-        expect(actual).toEqual(expected);
+-      },
+-    );
++    ])("given: a user who is NOT an owner (but is a $given), should: return a 403", async ({
++      role,
++    }) => {
++      const { user, organization } = await setupUserWithOrgAndAddAsMember({
++        role,
++      });
++      const newName = createPopulatedOrganization().name;
++
++      const actual = await sendAuthenticatedRequest({
++        formData: toFormData({ intent, name: newName }),
++        organizationSlug: organization.slug,
++        user,
++      });
++      const expected = forbidden();
++
++      expect(actual).toEqual(expected);
++    });
+ 
+     test("given: a user who is an owner and a valid name, should: update organization name, show a toast and redirect to new URL", async () => {
+       const { user, organization } = await setupUserWithOrgAndAddAsMember({
+@@ -246,23 +245,23 @@ describe("/organizations/:organizationSlug/settings/general route action", () =>
+         }),
+         given: "a too short name with whitespace",
+       },
+-    ])(
+-      "given: $given, should: return a 400 status code with an error message",
+-      async ({ body, expected }) => {
+-        const { user, organization } = await setupUserWithOrgAndAddAsMember({
+-          role: OrganizationMembershipRole.owner,
+-        });
+-
+-        const formData = toFormData(body);
+-        const response = await sendAuthenticatedRequest({
+-          formData,
+-          organizationSlug: organization.slug,
+-          user,
+-        });
+-
+-        expect(response).toMatchObject(expected);
+-      },
+-    );
++    ])("given: $given, should: return a 400 status code with an error message", async ({
++      body,
++      expected,
++    }) => {
++      const { user, organization } = await setupUserWithOrgAndAddAsMember({
++        role: OrganizationMembershipRole.owner,
++      });
++
++      const formData = toFormData(body);
++      const response = await sendAuthenticatedRequest({
++        formData,
++        organizationSlug: organization.slug,
++        user,
++      });
++
++      expect(response).toMatchObject(expected);
++    });
+   });
+ 
+   describe(`${DELETE_ORGANIZATION_INTENT} intent`, () => {
+@@ -277,23 +276,22 @@ describe("/organizations/:organizationSlug/settings/general route action", () =>
+         given: "an admin",
+         role: OrganizationMembershipRole.admin,
+       },
+-    ])(
+-      "given: a user who is NOT an owner (but is a$given), should: return a 403",
+-      async ({ role }) => {
+-        const { user, organization } = await setupUserWithOrgAndAddAsMember({
+-          role,
+-        });
+-
+-        const actual = await sendAuthenticatedRequest({
+-          formData: toFormData({ intent }),
+-          organizationSlug: organization.slug,
+-          user,
+-        });
+-        const expected = forbidden();
+-
+-        expect(actual).toEqual(expected);
+-      },
+-    );
++    ])("given: a user who is NOT an owner (but is a$given), should: return a 403", async ({
++      role,
++    }) => {
++      const { user, organization } = await setupUserWithOrgAndAddAsMember({
++        role,
++      });
++
++      const actual = await sendAuthenticatedRequest({
++        formData: toFormData({ intent }),
++        organizationSlug: organization.slug,
++        user,
++      });
++      const expected = forbidden();
++
++      expect(actual).toEqual(expected);
++    });
+ 
+     test("given: a valid request from an owner, should: delete organization and redirect to organizations page", async () => {
+       const { user, organization } = await createUserWithOrgAndAddAsMember({
+diff --git a/app/routes/_authenticated-routes+/organizations_+/$organizationSlug+/settings+/general.tsx b/app/routes/_authenticated-routes+/organizations_+/$organizationSlug+/settings+/general.tsx
+index b82329d..3fc1e66 100644
+--- a/app/routes/_authenticated-routes+/organizations_+/$organizationSlug+/settings+/general.tsx
++++ b/app/routes/_authenticated-routes+/organizations_+/$organizationSlug+/settings+/general.tsx
+@@ -1,4 +1,3 @@
+-import { OrganizationMembershipRole } from "@prisma/client";
+ import { useTranslation } from "react-i18next";
+ import { data, href } from "react-router";
+ 
+@@ -11,6 +10,7 @@ import { DangerZone } from "~/features/organizations/settings/general/danger-zon
+ import { GeneralOrganizationSettings } from "~/features/organizations/settings/general/general-organization-settings";
+ import { generalOrganizationSettingsAction } from "~/features/organizations/settings/general/general-organization-settings-action.server";
+ import { OrganizationInfo } from "~/features/organizations/settings/general/organization-info";
++import { OrganizationMembershipRole } from "~/generated/browser";
+ import { getPageTitle } from "~/utils/get-page-title.server";
+ 
+ export function loader({ context, params }: Route.LoaderArgs) {
+diff --git a/app/routes/_authenticated-routes+/organizations_+/$organizationSlug+/settings+/members.spec.ts b/app/routes/_authenticated-routes+/organizations_+/$organizationSlug+/settings+/members.spec.ts
+index 4de3f20..38b9088 100644
+--- a/app/routes/_authenticated-routes+/organizations_+/$organizationSlug+/settings+/members.spec.ts
++++ b/app/routes/_authenticated-routes+/organizations_+/$organizationSlug+/settings+/members.spec.ts
+@@ -1,6 +1,4 @@
+ import { faker } from "@faker-js/faker";
+-import type { Organization, UserAccount } from "@prisma/client";
+-import { OrganizationMembershipRole } from "@prisma/client";
+ import { addDays, subSeconds } from "date-fns";
+ import { data } from "react-router";
+ import { describe, expect, onTestFinished, test } from "vitest";
+@@ -33,6 +31,8 @@ import {
+   deleteUserAccountFromDatabaseById,
+   saveUserAccountToDatabase,
+ } from "~/features/user-accounts/user-accounts-model.server";
++import type { Organization, UserAccount } from "~/generated/client";
++import { OrganizationMembershipRole } from "~/generated/client";
+ import { resendHandlers } from "~/test/mocks/handlers/resend";
+ import { stripeHandlers } from "~/test/mocks/handlers/stripe";
+ import { supabaseHandlers } from "~/test/mocks/handlers/supabase";
+@@ -220,87 +220,80 @@ describe(`${createUrl(":organizationSlug")} route action`, () => {
+     test.each([
+       OrganizationMembershipRole.admin,
+       OrganizationMembershipRole.owner,
+-    ])(
+-      "given: an %s and no link exists for the organization, should: create a new invite link that expires in two days",
+-      async (role) => {
+-        const { user, organization } = await setupUserWithOrgAndAddAsMember({
+-          lookupKey: priceLookupKeysByTierAndInterval.mid.monthly,
+-          role,
+-        });
++    ])("given: an %s and no link exists for the organization, should: create a new invite link that expires in two days", async (role) => {
++      const { user, organization } = await setupUserWithOrgAndAddAsMember({
++        lookupKey: priceLookupKeysByTierAndInterval.mid.monthly,
++        role,
++      });
+ 
+-        const actual = await sendAuthenticatedRequest({
+-          formData: toFormData({ intent }),
+-          organizationSlug: organization.slug,
+-          user,
+-        });
+-        const expected = created();
+-
+-        // It creates a new organization invite link.
+-        const latestLink =
+-          await retrieveLatestInviteLinkFromDatabaseByOrganizationId(
+-            organization.id,
+-          );
+-        expect(latestLink?.deactivatedAt).toEqual(null);
+-        expect(latestLink?.creatorId).toEqual(user.id);
+-
+-        const expectedExpirationTime = subSeconds(addDays(new Date(), 2), 60);
+-        expect(latestLink?.expiresAt.getTime()).toBeGreaterThanOrEqual(
+-          expectedExpirationTime.getTime(),
++      const actual = await sendAuthenticatedRequest({
++        formData: toFormData({ intent }),
++        organizationSlug: organization.slug,
++        user,
++      });
++      const expected = created();
++
++      // It creates a new organization invite link.
++      const latestLink =
++        await retrieveLatestInviteLinkFromDatabaseByOrganizationId(
++          organization.id,
+         );
++      expect(latestLink?.deactivatedAt).toEqual(null);
++      expect(latestLink?.creatorId).toEqual(user.id);
+ 
+-        expect(actual.data).toEqual(expected.data);
+-        expect(actual.init?.status).toEqual(expected.init?.status);
+-      },
+-    );
++      const expectedExpirationTime = subSeconds(addDays(new Date(), 2), 60);
++      expect(latestLink?.expiresAt.getTime()).toBeGreaterThanOrEqual(
++        expectedExpirationTime.getTime(),
++      );
++
++      expect(actual.data).toEqual(expected.data);
++      expect(actual.init?.status).toEqual(expected.init?.status);
++    });
+ 
+     test.each([
+       OrganizationMembershipRole.admin,
+       OrganizationMembershipRole.owner,
+-    ])(
+-      "given: an %s and a link already exists for the organization, should: deactivate the old link and creates a new invite link that expires in two days",
+-      async (role) => {
+-        const { user, organization } = await setupUserWithOrgAndAddAsMember({
+-          lookupKey: priceLookupKeysByTierAndInterval.mid.monthly,
+-          role,
+-        });
+-        const existingInviteLink = createPopulatedOrganizationInviteLink({
+-          creatorId: user.id,
+-          organizationId: organization.id,
+-        });
++    ])("given: an %s and a link already exists for the organization, should: deactivate the old link and creates a new invite link that expires in two days", async (role) => {
++      const { user, organization } = await setupUserWithOrgAndAddAsMember({
++        lookupKey: priceLookupKeysByTierAndInterval.mid.monthly,
++        role,
++      });
++      const existingInviteLink = createPopulatedOrganizationInviteLink({
++        creatorId: user.id,
++        organizationId: organization.id,
++      });
+ 
+-        await saveOrganizationInviteLinkToDatabase(existingInviteLink);
++      await saveOrganizationInviteLinkToDatabase(existingInviteLink);
+ 
+-        const actual = await sendAuthenticatedRequest({
+-          formData: toFormData({ intent }),
+-          organizationSlug: organization.slug,
+-          user,
+-        });
+-        const expected = created();
+-
+-        expect(actual.data).toEqual(expected.data);
+-        expect(actual.init?.status).toEqual(expected.init?.status);
+-
+-        // It creates a new organization invite link.
+-        const latestLink =
+-          await retrieveLatestInviteLinkFromDatabaseByOrganizationId(
+-            organization.id,
+-          );
+-        expect(latestLink?.deactivatedAt).toEqual(null);
+-        expect(latestLink?.creatorId).toEqual(user.id);
+-
+-        const expectedExpirationTime = subSeconds(addDays(new Date(), 2), 60);
+-        expect(latestLink?.expiresAt.getTime()).toBeGreaterThanOrEqual(
+-          expectedExpirationTime.getTime(),
++      const actual = await sendAuthenticatedRequest({
++        formData: toFormData({ intent }),
++        organizationSlug: organization.slug,
++        user,
++      });
++      const expected = created();
++
++      expect(actual.data).toEqual(expected.data);
++      expect(actual.init?.status).toEqual(expected.init?.status);
++
++      // It creates a new organization invite link.
++      const latestLink =
++        await retrieveLatestInviteLinkFromDatabaseByOrganizationId(
++          organization.id,
+         );
++      expect(latestLink?.deactivatedAt).toEqual(null);
++      expect(latestLink?.creatorId).toEqual(user.id);
+ 
+-        // It deactivates the old link.
+-        const updatedLink =
+-          await retrieveOrganizationInviteLinkFromDatabaseById(
+-            existingInviteLink.id,
+-          );
+-        expect(updatedLink?.deactivatedAt).not.toEqual(null);
+-      },
+-    );
++      const expectedExpirationTime = subSeconds(addDays(new Date(), 2), 60);
++      expect(latestLink?.expiresAt.getTime()).toBeGreaterThanOrEqual(
++        expectedExpirationTime.getTime(),
++      );
++
++      // It deactivates the old link.
++      const updatedLink = await retrieveOrganizationInviteLinkFromDatabaseById(
++        existingInviteLink.id,
++      );
++      expect(updatedLink?.deactivatedAt).not.toEqual(null);
++    });
+ 
+     test("given: a user on the lowest plan (low.monthly) and only one existing member, should: return 400 because the org is full", async () => {
+       const { user, organization } = await setupUserWithOrgAndAddAsMember({
+@@ -366,67 +359,60 @@ describe(`${createUrl(":organizationSlug")} route action`, () => {
+     test.each([
+       OrganizationMembershipRole.admin,
+       OrganizationMembershipRole.owner,
+-    ])(
+-      "given: no active link exists for the organization and user is %s, should: return a 200 and do nothing",
+-      async (role) => {
+-        const { user, organization } = await setupUserWithOrgAndAddAsMember({
+-          role,
+-        });
++    ])("given: no active link exists for the organization and user is %s, should: return a 200 and do nothing", async (role) => {
++      const { user, organization } = await setupUserWithOrgAndAddAsMember({
++        role,
++      });
+ 
+-        const actual = await sendAuthenticatedRequest({
+-          formData: toFormData({ intent }),
+-          organizationSlug: organization.slug,
+-          user,
+-        });
+-        const expected = created();
++      const actual = await sendAuthenticatedRequest({
++        formData: toFormData({ intent }),
++        organizationSlug: organization.slug,
++        user,
++      });
++      const expected = created();
+ 
+-        expect(actual.data).toEqual(expected.data);
+-        expect(actual.init?.status).toEqual(expected.init?.status);
++      expect(actual.data).toEqual(expected.data);
++      expect(actual.init?.status).toEqual(expected.init?.status);
+ 
+-        // Verify no links exist
+-        const latestLink =
+-          await retrieveLatestInviteLinkFromDatabaseByOrganizationId(
+-            organization.id,
+-          );
+-        expect(latestLink).toBeNull();
+-      },
+-    );
++      // Verify no links exist
++      const latestLink =
++        await retrieveLatestInviteLinkFromDatabaseByOrganizationId(
++          organization.id,
++        );
++      expect(latestLink).toBeNull();
++    });
+ 
+     test.each([
+       OrganizationMembershipRole.admin,
+       OrganizationMembershipRole.owner,
+-    ])(
+-      "given: a link exists and is active for the organization and user is %s, should: deactivate the link",
+-      async (role) => {
+-        const { user, organization } = await setupUserWithOrgAndAddAsMember({
+-          role,
+-        });
++    ])("given: a link exists and is active for the organization and user is %s, should: deactivate the link", async (role) => {
++      const { user, organization } = await setupUserWithOrgAndAddAsMember({
++        role,
++      });
+ 
+-        // Create an active invite link
+-        const existingInviteLink = createPopulatedOrganizationInviteLink({
+-          creatorId: user.id,
+-          organizationId: organization.id,
+-        });
+-        await saveOrganizationInviteLinkToDatabase(existingInviteLink);
++      // Create an active invite link
++      const existingInviteLink = createPopulatedOrganizationInviteLink({
++        creatorId: user.id,
++        organizationId: organization.id,
++      });
++      await saveOrganizationInviteLinkToDatabase(existingInviteLink);
+ 
+-        const actual = await sendAuthenticatedRequest({
+-          formData: toFormData({ intent }),
+-          organizationSlug: organization.slug,
+-          user,
+-        });
+-        const expected = created();
++      const actual = await sendAuthenticatedRequest({
++        formData: toFormData({ intent }),
++        organizationSlug: organization.slug,
++        user,
++      });
++      const expected = created();
+ 
+-        expect(actual.data).toEqual(expected.data);
+-        expect(actual.init?.status).toEqual(expected.init?.status);
++      expect(actual.data).toEqual(expected.data);
++      expect(actual.init?.status).toEqual(expected.init?.status);
+ 
+-        // Verify the link was deactivated
+-        const updatedLink =
+-          await retrieveOrganizationInviteLinkFromDatabaseById(
+-            existingInviteLink.id,
+-          );
+-        expect(updatedLink?.deactivatedAt).not.toBeNull();
+-      },
+-    );
++      // Verify the link was deactivated
++      const updatedLink = await retrieveOrganizationInviteLinkFromDatabaseById(
++        existingInviteLink.id,
++      );
++      expect(updatedLink?.deactivatedAt).not.toBeNull();
++    });
+   });
+ 
+   describe(`${CHANGE_ROLE_INTENT} intent`, () => {
+@@ -498,24 +484,24 @@ describe(`${createUrl(":organizationSlug")} route action`, () => {
+         }),
+         given: "invalid role value",
+       },
+-    ])(
+-      "given: invalid form data ($given), should: return a 400 bad request",
+-      async ({ body, expected }) => {
+-        // Need an owner/admin to attempt the action, even with bad data,
+-        // to get past the initial permission check.
+-        const { user, organization } = await setupUserWithOrgAndAddAsMember({
+-          role: OrganizationMembershipRole.owner,
+-        });
++    ])("given: invalid form data ($given), should: return a 400 bad request", async ({
++      body,
++      expected,
++    }) => {
++      // Need an owner/admin to attempt the action, even with bad data,
++      // to get past the initial permission check.
++      const { user, organization } = await setupUserWithOrgAndAddAsMember({
++        role: OrganizationMembershipRole.owner,
++      });
+ 
+-        const actual = await sendAuthenticatedRequest({
+-          formData: toFormData(body),
+-          organizationSlug: organization.slug,
+-          user,
+-        });
++      const actual = await sendAuthenticatedRequest({
++        formData: toFormData(body),
++        organizationSlug: organization.slug,
++        user,
++      });
+ 
+-        expect(actual).toMatchObject({ data: expected.data });
+-      },
+-    );
++      expect(actual).toMatchObject({ data: expected.data });
++    });
+ 
+     test.each([
+       {
+@@ -530,29 +516,29 @@ describe(`${createUrl(":organizationSlug")} route action`, () => {
+         requestingUserRole: OrganizationMembershipRole.owner,
+         targetRoleChange: "deactivated" as const, // Explicitly type 'deactivated'
+       },
+-    ])(
+-      "given: the user is an $requestingUserRole and tries to change their own role to $targetRoleChange, should: return a 403 forbidden",
+-      async ({ requestingUserRole, targetRoleChange }) => {
+-        const { user, organization } = await setupUserWithOrgAndAddAsMember({
+-          role: requestingUserRole,
+-        });
++    ])("given: the user is an $requestingUserRole and tries to change their own role to $targetRoleChange, should: return a 403 forbidden", async ({
++      requestingUserRole,
++      targetRoleChange,
++    }) => {
++      const { user, organization } = await setupUserWithOrgAndAddAsMember({
++        role: requestingUserRole,
++      });
+ 
+-        const actual = await sendAuthenticatedRequest({
+-          formData: toFormData({
+-            intent,
+-            role: targetRoleChange,
+-            userId: user.id, // Targeting self
+-          }),
+-          organizationSlug: organization.slug,
+-          user,
+-        });
+-        const expected = forbidden({
+-          errors: { form: "You cannot change your own role or status." }, // Update message if needed
+-        });
++      const actual = await sendAuthenticatedRequest({
++        formData: toFormData({
++          intent,
++          role: targetRoleChange,
++          userId: user.id, // Targeting self
++        }),
++        organizationSlug: organization.slug,
++        user,
++      });
++      const expected = forbidden({
++        errors: { form: "You cannot change your own role or status." }, // Update message if needed
++      });
+ 
+-        expect(actual).toEqual(expected);
+-      },
+-    );
++      expect(actual).toEqual(expected);
++    });
+ 
+     test.each([
+       {
+@@ -565,44 +551,44 @@ describe(`${createUrl(":organizationSlug")} route action`, () => {
+         initialTargetRole: OrganizationMembershipRole.owner,
+         newRole: "deactivated" as const,
+       },
+-    ])(
+-      "given: the user is an admin and tries to $description, should: return a 403 forbidden",
+-      async ({ initialTargetRole, newRole }) => {
+-        const { user: adminUser, organization } =
+-          await setupUserWithOrgAndAddAsMember({
+-            role: OrganizationMembershipRole.admin,
+-          });
+-        const targetUser = await setupTargetMember(
+-          organization,
+-          initialTargetRole,
+-        );
+-
+-        const actual = await sendAuthenticatedRequest({
+-          formData: toFormData({
+-            intent,
+-            role: newRole,
+-            userId: targetUser.id,
+-          }),
+-          organizationSlug: organization.slug,
+-          user: adminUser,
+-        });
+-        const expected = forbidden({
+-          errors: {
+-            form: "Administrators cannot modify the role or status of owners.",
+-          },
++    ])("given: the user is an admin and tries to $description, should: return a 403 forbidden", async ({
++      initialTargetRole,
++      newRole,
++    }) => {
++      const { user: adminUser, organization } =
++        await setupUserWithOrgAndAddAsMember({
++          role: OrganizationMembershipRole.admin,
+         });
++      const targetUser = await setupTargetMember(
++        organization,
++        initialTargetRole,
++      );
++
++      const actual = await sendAuthenticatedRequest({
++        formData: toFormData({
++          intent,
++          role: newRole,
++          userId: targetUser.id,
++        }),
++        organizationSlug: organization.slug,
++        user: adminUser,
++      });
++      const expected = forbidden({
++        errors: {
++          form: "Administrators cannot modify the role or status of owners.",
++        },
++      });
+ 
+-        expect(actual).toEqual(expected);
++      expect(actual).toEqual(expected);
+ 
+-        // Verify target user's role/status is unchanged
+-        const membership =
+-          await retrieveOrganizationMembershipFromDatabaseByUserIdAndOrganizationId(
+-            { organizationId: organization.id, userId: targetUser.id },
+-          );
+-        expect(membership?.role).toEqual(initialTargetRole);
+-        expect(membership?.deactivatedAt).toBeNull();
+-      },
+-    );
++      // Verify target user's role/status is unchanged
++      const membership =
++        await retrieveOrganizationMembershipFromDatabaseByUserIdAndOrganizationId(
++          { organizationId: organization.id, userId: targetUser.id },
++        );
++      expect(membership?.role).toEqual(initialTargetRole);
++      expect(membership?.deactivatedAt).toBeNull();
++    });
+ 
+     // --- Admin Success Cases ---
+     test.each([
+@@ -614,114 +600,111 @@ describe(`${createUrl(":organizationSlug")} route action`, () => {
+         initialTargetRole: OrganizationMembershipRole.admin,
+         newRole: OrganizationMembershipRole.member,
+       },
+-    ])(
+-      "given: the user is an admin and changes another member from $initialTargetRole to $newRole, should: return 200 ok and update the role",
+-      async ({ initialTargetRole, newRole }) => {
+-        // Add MSW event listener for Stripe subscription update - but it shouldn't be called
+-        let stripeUpdateCalled = false;
+-        const updateListener = ({ request }: { request: Request }) => {
+-          if (new URL(request.url).pathname.startsWith("/v1/subscriptions/")) {
+-            stripeUpdateCalled = true;
+-          }
+-        };
+-        server.events.on("response:mocked", updateListener);
+-        onTestFinished(() => {
+-          server.events.removeListener("response:mocked", updateListener);
+-        });
+-
+-        const { user: adminUser, organization } =
+-          await setupUserWithOrgAndAddAsMember({
+-            role: OrganizationMembershipRole.admin,
+-          });
+-        const targetUser = await setupTargetMember(
+-          organization,
+-          initialTargetRole,
+-        );
++    ])("given: the user is an admin and changes another member from $initialTargetRole to $newRole, should: return 200 ok and update the role", async ({
++      initialTargetRole,
++      newRole,
++    }) => {
++      // Add MSW event listener for Stripe subscription update - but it shouldn't be called
++      let stripeUpdateCalled = false;
++      const updateListener = ({ request }: { request: Request }) => {
++        if (new URL(request.url).pathname.startsWith("/v1/subscriptions/")) {
++          stripeUpdateCalled = true;
++        }
++      };
++      server.events.on("response:mocked", updateListener);
++      onTestFinished(() => {
++        server.events.removeListener("response:mocked", updateListener);
++      });
+ 
+-        const actual = await sendAuthenticatedRequest({
+-          formData: toFormData({
+-            intent,
+-            role: newRole,
+-            userId: targetUser.id,
+-          }),
+-          organizationSlug: organization.slug,
+-          user: adminUser,
++      const { user: adminUser, organization } =
++        await setupUserWithOrgAndAddAsMember({
++          role: OrganizationMembershipRole.admin,
+         });
+-        const expected = data({});
++      const targetUser = await setupTargetMember(
++        organization,
++        initialTargetRole,
++      );
++
++      const actual = await sendAuthenticatedRequest({
++        formData: toFormData({
++          intent,
++          role: newRole,
++          userId: targetUser.id,
++        }),
++        organizationSlug: organization.slug,
++        user: adminUser,
++      });
++      const expected = data({});
+ 
+-        expect(actual.data).toEqual(expected.data);
+-        expect(actual.init?.status).toEqual(expected.init?.status);
++      expect(actual.data).toEqual(expected.data);
++      expect(actual.init?.status).toEqual(expected.init?.status);
+ 
+-        // Verify target user's role is updated
+-        const membership =
+-          await retrieveOrganizationMembershipFromDatabaseByUserIdAndOrganizationId(
+-            { organizationId: organization.id, userId: targetUser.id },
+-          );
+-        expect(membership?.role).toEqual(newRole);
+-        expect(membership?.deactivatedAt).toBeNull();
++      // Verify target user's role is updated
++      const membership =
++        await retrieveOrganizationMembershipFromDatabaseByUserIdAndOrganizationId(
++          { organizationId: organization.id, userId: targetUser.id },
++        );
++      expect(membership?.role).toEqual(newRole);
++      expect(membership?.deactivatedAt).toBeNull();
+ 
+-        // Verify Stripe was NOT called (since this is just a role change)
+-        expect(stripeUpdateCalled).toEqual(false);
+-      },
+-    );
++      // Verify Stripe was NOT called (since this is just a role change)
++      expect(stripeUpdateCalled).toEqual(false);
++    });
+ 
+     test.each([
+       OrganizationMembershipRole.member,
+       OrganizationMembershipRole.admin,
+-    ])(
+-      "given: the user is an admin and deactivates another member with role %s, should: return 200 ok and deactivate the membership",
+-      async (initialTargetRole) => {
+-        // Add MSW event listener for Stripe subscription update
+-        let stripeUpdateCalled = false;
+-        const updateListener = ({ request }: { request: Request }) => {
+-          if (new URL(request.url).pathname.startsWith("/v1/subscriptions/")) {
+-            stripeUpdateCalled = true;
+-          }
+-        };
+-        server.events.on("response:mocked", updateListener);
+-        onTestFinished(() => {
+-          server.events.removeListener("response:mocked", updateListener);
++    ])("given: the user is an admin and deactivates another member with role %s, should: return 200 ok and deactivate the membership", async (initialTargetRole) => {
++      // Add MSW event listener for Stripe subscription update
++      let stripeUpdateCalled = false;
++      const updateListener = ({ request }: { request: Request }) => {
++        if (new URL(request.url).pathname.startsWith("/v1/subscriptions/")) {
++          stripeUpdateCalled = true;
++        }
++      };
++      server.events.on("response:mocked", updateListener);
++      onTestFinished(() => {
++        server.events.removeListener("response:mocked", updateListener);
++      });
++
++      const { user: adminUser, organization } =
++        await setupUserWithOrgAndAddAsMember({
++          role: OrganizationMembershipRole.admin,
+         });
++      const targetUser = await setupTargetMember(
++        organization,
++        initialTargetRole,
++      );
++      const snapshot = new Date();
+ 
+-        const { user: adminUser, organization } =
+-          await setupUserWithOrgAndAddAsMember({
+-            role: OrganizationMembershipRole.admin,
+-          });
+-        const targetUser = await setupTargetMember(
+-          organization,
+-          initialTargetRole,
+-        );
+-        const snapshot = new Date();
++      const actual = await sendAuthenticatedRequest({
++        formData: toFormData({
++          intent,
++          role: "deactivated",
++          userId: targetUser.id,
++        }),
++        organizationSlug: organization.slug,
++        user: adminUser,
++      });
++      const expected = data({});
+ 
+-        const actual = await sendAuthenticatedRequest({
+-          formData: toFormData({
+-            intent,
+-            role: "deactivated",
+-            userId: targetUser.id,
+-          }),
+-          organizationSlug: organization.slug,
+-          user: adminUser,
+-        });
+-        const expected = data({});
+-
+-        expect(actual.data).toEqual(expected.data);
+-        expect(actual.init?.status).toEqual(expected.init?.status);
+-
+-        // Verify target user is deactivated
+-        const membership =
+-          await retrieveOrganizationMembershipFromDatabaseByUserIdAndOrganizationId(
+-            { organizationId: organization.id, userId: targetUser.id },
+-          );
+-        expect(membership?.role).toEqual(initialTargetRole); // Role shouldn't change on deactivation
+-        expect(membership?.deactivatedAt).not.toBeNull();
+-        expect(membership?.deactivatedAt?.getTime()).toBeGreaterThanOrEqual(
+-          snapshot.getTime(),
++      expect(actual.data).toEqual(expected.data);
++      expect(actual.init?.status).toEqual(expected.init?.status);
++
++      // Verify target user is deactivated
++      const membership =
++        await retrieveOrganizationMembershipFromDatabaseByUserIdAndOrganizationId(
++          { organizationId: organization.id, userId: targetUser.id },
+         );
++      expect(membership?.role).toEqual(initialTargetRole); // Role shouldn't change on deactivation
++      expect(membership?.deactivatedAt).not.toBeNull();
++      expect(membership?.deactivatedAt?.getTime()).toBeGreaterThanOrEqual(
++        snapshot.getTime(),
++      );
+ 
+-        // Verify Stripe was called to decrease seats
+-        expect(stripeUpdateCalled).toEqual(true);
+-      },
+-    );
++      // Verify Stripe was called to decrease seats
++      expect(stripeUpdateCalled).toEqual(true);
++    });
+ 
+     // --- Owner Success Cases ---
+     test.each([
+@@ -749,115 +732,112 @@ describe(`${createUrl(":organizationSlug")} route action`, () => {
+         initialTargetRole: OrganizationMembershipRole.owner,
+         newRole: OrganizationMembershipRole.member,
+       },
+-    ])(
+-      "given: the user is an owner and changes another member from $initialTargetRole to $newRole, should: return 200 ok and update the role",
+-      async ({ initialTargetRole, newRole }) => {
+-        // Add MSW event listener for Stripe subscription update - but it shouldn't be called
+-        let stripeUpdateCalled = false;
+-        const updateListener = ({ request }: { request: Request }) => {
+-          if (new URL(request.url).pathname.startsWith("/v1/subscriptions/")) {
+-            stripeUpdateCalled = true;
+-          }
+-        };
+-        server.events.on("response:mocked", updateListener);
+-        onTestFinished(() => {
+-          server.events.removeListener("response:mocked", updateListener);
+-        });
+-
+-        const { user: ownerUser, organization } =
+-          await setupUserWithOrgAndAddAsMember({
+-            role: OrganizationMembershipRole.owner,
+-          });
+-        const targetUser = await setupTargetMember(
+-          organization,
+-          initialTargetRole,
+-        );
++    ])("given: the user is an owner and changes another member from $initialTargetRole to $newRole, should: return 200 ok and update the role", async ({
++      initialTargetRole,
++      newRole,
++    }) => {
++      // Add MSW event listener for Stripe subscription update - but it shouldn't be called
++      let stripeUpdateCalled = false;
++      const updateListener = ({ request }: { request: Request }) => {
++        if (new URL(request.url).pathname.startsWith("/v1/subscriptions/")) {
++          stripeUpdateCalled = true;
++        }
++      };
++      server.events.on("response:mocked", updateListener);
++      onTestFinished(() => {
++        server.events.removeListener("response:mocked", updateListener);
++      });
+ 
+-        const actual = await sendAuthenticatedRequest({
+-          formData: toFormData({
+-            intent,
+-            role: newRole,
+-            userId: targetUser.id,
+-          }),
+-          organizationSlug: organization.slug,
+-          user: ownerUser,
++      const { user: ownerUser, organization } =
++        await setupUserWithOrgAndAddAsMember({
++          role: OrganizationMembershipRole.owner,
+         });
+-        const expected = data({});
++      const targetUser = await setupTargetMember(
++        organization,
++        initialTargetRole,
++      );
+ 
+-        expect(actual.data).toEqual(expected.data);
+-        expect(actual.init?.status).toEqual(expected.init?.status);
++      const actual = await sendAuthenticatedRequest({
++        formData: toFormData({
++          intent,
++          role: newRole,
++          userId: targetUser.id,
++        }),
++        organizationSlug: organization.slug,
++        user: ownerUser,
++      });
++      const expected = data({});
+ 
+-        // Verify target user's role is updated
+-        const membership =
+-          await retrieveOrganizationMembershipFromDatabaseByUserIdAndOrganizationId(
+-            { organizationId: organization.id, userId: targetUser.id },
+-          );
+-        expect(membership?.role).toEqual(newRole);
+-        expect(membership?.deactivatedAt).toBeNull();
++      expect(actual.data).toEqual(expected.data);
++      expect(actual.init?.status).toEqual(expected.init?.status);
+ 
+-        // Verify Stripe was NOT called (since this is just a role change)
+-        expect(stripeUpdateCalled).toEqual(false);
+-      },
+-    );
++      // Verify target user's role is updated
++      const membership =
++        await retrieveOrganizationMembershipFromDatabaseByUserIdAndOrganizationId(
++          { organizationId: organization.id, userId: targetUser.id },
++        );
++      expect(membership?.role).toEqual(newRole);
++      expect(membership?.deactivatedAt).toBeNull();
++
++      // Verify Stripe was NOT called (since this is just a role change)
++      expect(stripeUpdateCalled).toEqual(false);
++    });
+ 
+     test.each([
+       OrganizationMembershipRole.member,
+       OrganizationMembershipRole.admin,
+       OrganizationMembershipRole.owner,
+-    ])(
+-      "given: the user is an owner and deactivates another member with role %s, should: return 200 ok and deactivate the membership",
+-      async (initialTargetRole) => {
+-        // Add MSW event listener for Stripe subscription update
+-        let stripeUpdateCalled = false;
+-        const updateListener = ({ request }: { request: Request }) => {
+-          if (new URL(request.url).pathname.startsWith("/v1/subscriptions/")) {
+-            stripeUpdateCalled = true;
+-          }
+-        };
+-        server.events.on("response:mocked", updateListener);
+-        onTestFinished(() => {
+-          server.events.removeListener("response:mocked", updateListener);
++    ])("given: the user is an owner and deactivates another member with role %s, should: return 200 ok and deactivate the membership", async (initialTargetRole) => {
++      // Add MSW event listener for Stripe subscription update
++      let stripeUpdateCalled = false;
++      const updateListener = ({ request }: { request: Request }) => {
++        if (new URL(request.url).pathname.startsWith("/v1/subscriptions/")) {
++          stripeUpdateCalled = true;
++        }
++      };
++      server.events.on("response:mocked", updateListener);
++      onTestFinished(() => {
++        server.events.removeListener("response:mocked", updateListener);
++      });
++
++      const { user: ownerUser, organization } =
++        await setupUserWithOrgAndAddAsMember({
++          role: OrganizationMembershipRole.owner,
+         });
++      const targetUser = await setupTargetMember(
++        organization,
++        initialTargetRole,
++      );
++      const snapshot = new Date();
+ 
+-        const { user: ownerUser, organization } =
+-          await setupUserWithOrgAndAddAsMember({
+-            role: OrganizationMembershipRole.owner,
+-          });
+-        const targetUser = await setupTargetMember(
+-          organization,
+-          initialTargetRole,
+-        );
+-        const snapshot = new Date();
++      const actual = await sendAuthenticatedRequest({
++        formData: toFormData({
++          intent,
++          role: "deactivated",
++          userId: targetUser.id,
++        }),
++        organizationSlug: organization.slug,
++        user: ownerUser,
++      });
++      const expected = data({});
+ 
+-        const actual = await sendAuthenticatedRequest({
+-          formData: toFormData({
+-            intent,
+-            role: "deactivated",
+-            userId: targetUser.id,
+-          }),
+-          organizationSlug: organization.slug,
+-          user: ownerUser,
+-        });
+-        const expected = data({});
+-
+-        expect(actual.data).toEqual(expected.data);
+-        expect(actual.init?.status).toEqual(expected.init?.status);
+-
+-        // Verify target user is deactivated
+-        const membership =
+-          await retrieveOrganizationMembershipFromDatabaseByUserIdAndOrganizationId(
+-            { organizationId: organization.id, userId: targetUser.id },
+-          );
+-        expect(membership?.role).toEqual(initialTargetRole); // Role shouldn't change on deactivation
+-        expect(membership?.deactivatedAt).not.toBeNull();
+-        expect(membership?.deactivatedAt?.getTime()).toBeGreaterThanOrEqual(
+-          snapshot.getTime(),
++      expect(actual.data).toEqual(expected.data);
++      expect(actual.init?.status).toEqual(expected.init?.status);
++
++      // Verify target user is deactivated
++      const membership =
++        await retrieveOrganizationMembershipFromDatabaseByUserIdAndOrganizationId(
++          { organizationId: organization.id, userId: targetUser.id },
+         );
++      expect(membership?.role).toEqual(initialTargetRole); // Role shouldn't change on deactivation
++      expect(membership?.deactivatedAt).not.toBeNull();
++      expect(membership?.deactivatedAt?.getTime()).toBeGreaterThanOrEqual(
++        snapshot.getTime(),
++      );
+ 
+-        // Verify Stripe was called to decrease seats
+-        expect(stripeUpdateCalled).toEqual(true);
+-      },
+-    );
++      // Verify Stripe was called to decrease seats
++      expect(stripeUpdateCalled).toEqual(true);
++    });
+ 
+     test("given: an owner on the lowest plan (low.monthly) reactivating a deactivated member, should: return 400 because the org is full", async () => {
+       const { user: ownerUser, organization } =
+@@ -1094,27 +1074,27 @@ describe(`${createUrl(":organizationSlug")} route action`, () => {
+         }),
+         given: 'role is "deactivated"', // This shouldn't be possible for invites
+       },
+-    ])(
+-      "given: invalid form data ($given), should: return a 400 bad request",
+-      async ({ body, expected }) => {
+-        // Need an owner/admin to attempt the action, even with bad data,
+-        // to get past the initial permission check.
+-        const { user, organization } = await setupUserWithOrgAndAddAsMember({
+-          role: faker.helpers.arrayElement([
+-            OrganizationMembershipRole.admin,
+-            OrganizationMembershipRole.owner,
+-          ]),
+-        });
++    ])("given: invalid form data ($given), should: return a 400 bad request", async ({
++      body,
++      expected,
++    }) => {
++      // Need an owner/admin to attempt the action, even with bad data,
++      // to get past the initial permission check.
++      const { user, organization } = await setupUserWithOrgAndAddAsMember({
++        role: faker.helpers.arrayElement([
++          OrganizationMembershipRole.admin,
++          OrganizationMembershipRole.owner,
++        ]),
++      });
+ 
+-        const actual = await sendAuthenticatedRequest({
+-          formData: toFormData(body),
+-          organizationSlug: organization.slug,
+-          user,
+-        });
++      const actual = await sendAuthenticatedRequest({
++        formData: toFormData(body),
++        organizationSlug: organization.slug,
++        user,
++      });
+ 
+-        expect(actual).toMatchObject({ data: expected.data });
+-      },
+-    );
++      expect(actual).toMatchObject({ data: expected.data });
++    });
+ 
+     test("given: user is admin and tries to invite as owner, should: return 403 forbidden", async () => {
+       const { user: adminUser, organization } =
+@@ -1201,63 +1181,63 @@ describe(`${createUrl(":organizationSlug")} route action`, () => {
+         inviteeRole: OrganizationMembershipRole.owner,
+         inviterRole: OrganizationMembershipRole.owner,
+       },
+-    ])(
+-      "given: the user is an $inviterRole and invites as $inviteeRole, should: create an email invite, send email (mocked), and return 200 ok with success toast",
+-      async ({ inviterRole, inviteeRole }) => {
+-        const { user: inviterUser, organization } =
+-          await setupUserWithOrgAndAddAsMember({ role: inviterRole });
+-        const targetEmail = faker.internet.email();
+-
+-        const actual = (await sendAuthenticatedRequest({
+-          formData: toFormData({
+-            email: targetEmail,
+-            intent,
+-            role: inviteeRole,
+-          }),
+-          organizationSlug: organization.slug,
+-          user: inviterUser,
+-        })) as DataWithResponseInit<Record<string, never>>;
+-        const expected = data({ success: targetEmail });
+-
+-        // Check response is OK
+-        expect(actual.data).toEqual(expected.data);
+-        expect(actual.init?.status).toEqual(expected.init?.status);
+-
+-        // Verify email invite was created in the database
+-        const invites =
+-          await retrieveActiveEmailInviteLinksFromDatabaseByOrganizationId(
+-            organization.id,
+-          );
+-        const createdInvite = invites.find(
+-          (invite) => invite.email === targetEmail,
+-        );
++    ])("given: the user is an $inviterRole and invites as $inviteeRole, should: create an email invite, send email (mocked), and return 200 ok with success toast", async ({
++      inviterRole,
++      inviteeRole,
++    }) => {
++      const { user: inviterUser, organization } =
++        await setupUserWithOrgAndAddAsMember({ role: inviterRole });
++      const targetEmail = faker.internet.email();
+ 
+-        expect(createdInvite).toBeDefined();
+-        expect(createdInvite?.role).toEqual(inviteeRole);
+-        expect(createdInvite?.organizationId).toEqual(organization.id);
+-        expect(createdInvite?.invitedById).toEqual(inviterUser.id);
+-        expect(createdInvite?.invitedBy?.name).toEqual(inviterUser.name);
++      const actual = (await sendAuthenticatedRequest({
++        formData: toFormData({
++          email: targetEmail,
++          intent,
++          role: inviteeRole,
++        }),
++        organizationSlug: organization.slug,
++        user: inviterUser,
++      })) as DataWithResponseInit<Record<string, never>>;
++      const expected = data({ success: targetEmail });
+ 
+-        // Verify expiration date (approx 2 days from now)
+-        const expectedExpirationTime = subSeconds(addDays(new Date(), 2), 60);
+-        expect(createdInvite?.expiresAt.getTime()).toBeGreaterThanOrEqual(
+-          expectedExpirationTime.getTime(),
+-        );
++      // Check response is OK
++      expect(actual.data).toEqual(expected.data);
++      expect(actual.init?.status).toEqual(expected.init?.status);
+ 
+-        // Verify success toast header
+-        const maybeToast = (actual.init?.headers as Headers)?.get("Set-Cookie");
+-        const { toast } = await getToast(
+-          new Request(createUrl(organization.slug), {
+-            headers: { cookie: maybeToast ?? "" },
+-          }),
++      // Verify email invite was created in the database
++      const invites =
++        await retrieveActiveEmailInviteLinksFromDatabaseByOrganizationId(
++          organization.id,
+         );
+-        expect(toast).toMatchObject({
+-          id: expect.any(String) as string,
+-          title: "Email invitation sent",
+-          type: "success",
+-        });
+-      },
+-    );
++      const createdInvite = invites.find(
++        (invite) => invite.email === targetEmail,
++      );
++
++      expect(createdInvite).toBeDefined();
++      expect(createdInvite?.role).toEqual(inviteeRole);
++      expect(createdInvite?.organizationId).toEqual(organization.id);
++      expect(createdInvite?.invitedById).toEqual(inviterUser.id);
++      expect(createdInvite?.invitedBy?.name).toEqual(inviterUser.name);
++
++      // Verify expiration date (approx 2 days from now)
++      const expectedExpirationTime = subSeconds(addDays(new Date(), 2), 60);
++      expect(createdInvite?.expiresAt.getTime()).toBeGreaterThanOrEqual(
++        expectedExpirationTime.getTime(),
++      );
++
++      // Verify success toast header
++      const maybeToast = (actual.init?.headers as Headers)?.get("Set-Cookie");
++      const { toast } = await getToast(
++        new Request(createUrl(organization.slug), {
++          headers: { cookie: maybeToast ?? "" },
++        }),
++      );
++      expect(toast).toMatchObject({
++        id: expect.any(String) as string,
++        title: "Email invitation sent",
++        type: "success",
++      });
++    });
+ 
+     test("given: a user on the lowest plan (low.monthly) trying to invite anyone, should: return 400 because the org is full", async () => {
+       const { user, organization } = await setupUserWithOrgAndAddAsMember({
+diff --git a/app/routes/_authenticated-routes+/organizations_+/_index.tsx b/app/routes/_authenticated-routes+/organizations_+/_index.tsx
+index 70249ab..9f85e67 100644
+--- a/app/routes/_authenticated-routes+/organizations_+/_index.tsx
++++ b/app/routes/_authenticated-routes+/organizations_+/_index.tsx
+@@ -1,4 +1,3 @@
+-import { OrganizationMembershipRole } from "@prisma/client";
+ import { useTranslation } from "react-i18next";
+ import { href, Link, redirect } from "react-router";
+ 
+@@ -16,6 +15,7 @@ import {
+ import { ThemeToggle } from "~/features/color-scheme/theme-toggle";
+ import { getInstance } from "~/features/localization/i18next-middleware.server";
+ import { requireOnboardedUserAccountExists } from "~/features/onboarding/onboarding-helpers.server";
++import { OrganizationMembershipRole } from "~/generated/browser";
+ import { cn } from "~/lib/utils";
+ import { getPageTitle } from "~/utils/get-page-title.server";
+ 
+diff --git a/app/routes/_authenticated-routes+/organizations_+/new.spec.ts b/app/routes/_authenticated-routes+/organizations_+/new.spec.ts
+index 7950408..38f7f44 100644
+--- a/app/routes/_authenticated-routes+/organizations_+/new.spec.ts
++++ b/app/routes/_authenticated-routes+/organizations_+/new.spec.ts
+@@ -303,26 +303,26 @@ describe("/organizations/new route action", () => {
+         },
+         given: "a too short name with whitespace",
+       },
+-    ])(
+-      "given: $given, should: return a 400 status code with an error message",
+-      async ({ body, expectedError }) => {
+-        const { userAccount } = await setup();
+-
+-        const formData = toFormData(body);
+-        const submission = parseSubmission(formData);
+-        const response = await sendAuthenticatedRequest({
+-          formData,
+-          userAccount,
+-        });
+-
+-        expect(response).toEqual(
+-          badRequest({
+-            result: report(submission, {
+-              error: expectedError,
+-            }),
++    ])("given: $given, should: return a 400 status code with an error message", async ({
++      body,
++      expectedError,
++    }) => {
++      const { userAccount } = await setup();
++
++      const formData = toFormData(body);
++      const submission = parseSubmission(formData);
++      const response = await sendAuthenticatedRequest({
++        formData,
++        userAccount,
++      });
++
++      expect(response).toEqual(
++        badRequest({
++          result: report(submission, {
++            error: expectedError,
+           }),
+-        );
+-      },
+-    );
++        }),
++      );
++    });
+   });
+ });
+diff --git a/app/routes/_authenticated-routes+/settings+/account.spec.ts b/app/routes/_authenticated-routes+/settings+/account.spec.ts
+index c4839b3..9f7f940 100644
+--- a/app/routes/_authenticated-routes+/settings+/account.spec.ts
++++ b/app/routes/_authenticated-routes+/settings+/account.spec.ts
+@@ -1,6 +1,4 @@
+ import { parseSubmission, report } from "@conform-to/react/future";
+-import type { UserAccount } from "@prisma/client";
+-import { OrganizationMembershipRole } from "@prisma/client";
+ import { describe, expect, onTestFinished, test } from "vitest";
+ 
+ import { action } from "./account";
+@@ -24,6 +22,8 @@ import {
+   retrieveUserAccountFromDatabaseById,
+   saveUserAccountToDatabase,
+ } from "~/features/user-accounts/user-accounts-model.server";
++import type { UserAccount } from "~/generated/client";
++import { OrganizationMembershipRole } from "~/generated/client";
+ import { stripeHandlers } from "~/test/mocks/handlers/stripe";
+ import { supabaseHandlers } from "~/test/mocks/handlers/supabase";
+ import { setupMockServerLifecycle } from "~/test/msw-test-utils";
+@@ -256,28 +256,28 @@ describe("/settings/account route action", () => {
+         },
+         given: "a too short name with whitespace",
+       },
+-    ])(
+-      "given: $given, should: return a 400 status code with an error message",
+-      async ({ body, expectedError }) => {
+-        const user = await setup();
++    ])("given: $given, should: return a 400 status code with an error message", async ({
++      body,
++      expectedError,
++    }) => {
++      const user = await setup();
+ 
+-        const formData = toFormData(body);
+-        const submission = parseSubmission(formData);
++      const formData = toFormData(body);
++      const submission = parseSubmission(formData);
+ 
+-        const actual = await sendAuthenticatedRequest({
+-          formData,
+-          user,
+-        });
++      const actual = await sendAuthenticatedRequest({
++        formData,
++        user,
++      });
+ 
+-        expect(actual).toEqual(
+-          badRequest({
+-            result: report(submission, {
+-              error: expectedError,
+-            }),
++      expect(actual).toEqual(
++        badRequest({
++          result: report(submission, {
++            error: expectedError,
+           }),
+-        );
+-      },
+-    );
++        }),
++      );
++    });
+   });
+ 
+   describe(`${DELETE_USER_ACCOUNT_INTENT} intent`, () => {
+diff --git a/app/routes/_user-authentication+/_anonymous-routes+/login.spec.ts b/app/routes/_user-authentication+/_anonymous-routes+/login.spec.ts
+index 120d5b5..9713ac8 100644
+--- a/app/routes/_user-authentication+/_anonymous-routes+/login.spec.ts
++++ b/app/routes/_user-authentication+/_anonymous-routes+/login.spec.ts
+@@ -146,28 +146,27 @@ describe("/login route action", () => {
+         body: { email: "invalid-email", intent },
+         given: "an invalid email",
+       },
+-    ])(
+-      "given: $given, should: return a 400 status code with an error message",
+-      async ({ body }) => {
+-        const formData = toFormData(body);
+-
+-        const actual = await sendRequest({ formData });
+-        expect(actual).toMatchObject({
+-          data: {
+-            result: {
+-              error: {
+-                fieldErrors: {
+-                  email: expect.arrayContaining([
+-                    "userAuthentication:login.errors.invalidEmail",
+-                  ]),
+-                },
++    ])("given: $given, should: return a 400 status code with an error message", async ({
++      body,
++    }) => {
++      const formData = toFormData(body);
++
++      const actual = await sendRequest({ formData });
++      expect(actual).toMatchObject({
++        data: {
++          result: {
++            error: {
++              fieldErrors: {
++                email: expect.arrayContaining([
++                  "userAuthentication:login.errors.invalidEmail",
++                ]),
+               },
+             },
+           },
+-          init: { status: 400 },
+-        });
+-      },
+-    );
++        },
++        init: { status: 400 },
++      });
++    });
+ 
+     test("given: a valid email for a non-existent user, should: return a 400 status code with an error message", async () => {
+       const formData = toFormData({ email: "test@example.com", intent });
+diff --git a/app/routes/_user-authentication+/_anonymous-routes+/register.spec.ts b/app/routes/_user-authentication+/_anonymous-routes+/register.spec.ts
+index 92372a1..dd7dd0a 100644
+--- a/app/routes/_user-authentication+/_anonymous-routes+/register.spec.ts
++++ b/app/routes/_user-authentication+/_anonymous-routes+/register.spec.ts
+@@ -142,28 +142,27 @@ describe("/register route action", () => {
+         body: { email: "invalid-email", intent },
+         given: "an invalid email",
+       },
+-    ])(
+-      "given: $given, should: return a 400 status code with an error message",
+-      async ({ body }) => {
+-        const formData = toFormData(body);
+-
+-        const actual = await sendRequest({ formData });
+-        expect(actual).toMatchObject({
+-          data: {
+-            result: {
+-              error: {
+-                fieldErrors: {
+-                  email: expect.arrayContaining([
+-                    "userAuthentication:register.errors.invalidEmail",
+-                  ]),
+-                },
++    ])("given: $given, should: return a 400 status code with an error message", async ({
++      body,
++    }) => {
++      const formData = toFormData(body);
++
++      const actual = await sendRequest({ formData });
++      expect(actual).toMatchObject({
++        data: {
++          result: {
++            error: {
++              fieldErrors: {
++                email: expect.arrayContaining([
++                  "userAuthentication:register.errors.invalidEmail",
++                ]),
+               },
+             },
+           },
+-          init: { status: 400 },
+-        });
+-      },
+-    );
++        },
++        init: { status: 400 },
++      });
++    });
+ 
+     test("given: a valid email for an existing user, should: return a 400 status code with an error message", async () => {
+       const userAccount = createPopulatedUserAccount();
+diff --git a/app/routes/contact-sales.spec.ts b/app/routes/contact-sales.spec.ts
+index bbe5822..6a94fdc 100644
+--- a/app/routes/contact-sales.spec.ts
++++ b/app/routes/contact-sales.spec.ts
+@@ -182,16 +182,16 @@ describe("/contact-sales route action", () => {
+         }),
+         given: "message too long",
+       },
+-    ])(
+-      "given: $given, should: return a 400 status code with an error message",
+-      async ({ body, expected }) => {
+-        const formData = toFormData(body as Payload);
++    ])("given: $given, should: return a 400 status code with an error message", async ({
++      body,
++      expected,
++    }) => {
++      const formData = toFormData(body as Payload);
+ 
+-        const actual = await sendRequest({ formData });
++      const actual = await sendRequest({ formData });
+ 
+-        expect(actual).toMatchObject(expected);
+-      },
+-    );
++      expect(actual).toMatchObject(expected);
++    });
+ 
+     test("given: honeypot field is filled, should: throw a 400 error", async () => {
+       const formData = toFormData({
+diff --git a/app/routes/organizations_+/email-invite.spec.ts b/app/routes/organizations_+/email-invite.spec.ts
+index 90a5f1f..c2a436f 100644
+--- a/app/routes/organizations_+/email-invite.spec.ts
++++ b/app/routes/organizations_+/email-invite.spec.ts
+@@ -1,4 +1,3 @@
+-import type { UserAccount } from "@prisma/client";
+ import { describe, expect, test } from "vitest";
+ 
+ import { action } from "./email-invite";
+@@ -10,6 +9,7 @@ import {
+   saveOrganizationEmailInviteLinkToDatabase,
+ } from "~/features/organizations/organizations-email-invite-link-model.server";
+ import { createPopulatedOrganizationEmailInviteLink } from "~/features/organizations/organizations-factories.server";
++import type { UserAccount } from "~/generated/client";
+ import { stripeHandlers } from "~/test/mocks/handlers/stripe";
+ import { supabaseHandlers } from "~/test/mocks/handlers/supabase";
+ import { setupMockServerLifecycle } from "~/test/msw-test-utils";
+diff --git a/app/routes/organizations_+/invite-link.spec.ts b/app/routes/organizations_+/invite-link.spec.ts
+index 8dcbbfb..9989848 100644
+--- a/app/routes/organizations_+/invite-link.spec.ts
++++ b/app/routes/organizations_+/invite-link.spec.ts
+@@ -1,4 +1,3 @@
+-import type { UserAccount } from "@prisma/client";
+ import { describe, expect, test } from "vitest";
+ 
+ import { action } from "./invite-link";
+@@ -7,6 +6,7 @@ import { getInviteLinkInfoFromSession } from "~/features/organizations/accept-in
+ import { retrieveOrganizationMembershipFromDatabaseByUserIdAndOrganizationId } from "~/features/organizations/organization-membership-model.server";
+ import { createPopulatedOrganizationInviteLink } from "~/features/organizations/organizations-factories.server";
+ import { saveOrganizationInviteLinkToDatabase } from "~/features/organizations/organizations-invite-link-model.server";
++import type { UserAccount } from "~/generated/client";
+ import { stripeHandlers } from "~/test/mocks/handlers/stripe";
+ import { supabaseHandlers } from "~/test/mocks/handlers/supabase";
+ import { setupMockServerLifecycle } from "~/test/msw-test-utils";
+diff --git a/app/test/mocks/handlers/supabase/mock-sessions.ts b/app/test/mocks/handlers/supabase/mock-sessions.ts
+index aff7683..7612b18 100644
+--- a/app/test/mocks/handlers/supabase/mock-sessions.ts
++++ b/app/test/mocks/handlers/supabase/mock-sessions.ts
+@@ -29,9 +29,10 @@ function isSession(data: unknown): data is Session {
+  * @returns A promise that resolves when the session is saved
+  */
+ export async function setMockSession(accessToken: string, session: Session) {
++  const sessionData = JSON.parse(JSON.stringify(session));
+   await prisma.mockAccessTokenSession.upsert({
+-    create: { accessToken, sessionData: session },
+-    update: { sessionData: session },
++    create: { accessToken, sessionData },
++    update: { sessionData },
+     where: { accessToken },
+   });
+ }
+diff --git a/app/test/test-utils.ts b/app/test/test-utils.ts
+index 34287fe..5bc6580 100644
+--- a/app/test/test-utils.ts
++++ b/app/test/test-utils.ts
+@@ -1,10 +1,5 @@
+ /** biome-ignore-all lint/style/noNonNullAssertion: test code */
+ import { faker } from "@faker-js/faker";
+-import type { Organization, UserAccount } from "@prisma/client";
+-import {
+-  OrganizationMembershipRole,
+-  StripePriceInterval,
+-} from "@prisma/client";
+ import type { MiddlewareFunction, Params } from "react-router";
+ import { RouterContextProvider } from "react-router";
+ 
+@@ -43,6 +38,11 @@ import {
+   createPopulatedSupabaseUser,
+ } from "~/features/user-authentication/user-authentication-factories";
+ import { authMiddleware } from "~/features/user-authentication/user-authentication-middleware.server";
++import type { Organization, UserAccount } from "~/generated/client";
++import {
++  OrganizationMembershipRole,
++  StripePriceInterval,
++} from "~/generated/client";
+ import type { DeepPartial } from "~/utils/types";
+ 
+ /**
+diff --git a/app/utils/database.server.ts b/app/utils/database.server.ts
+index c109e96..2ea8270 100644
+--- a/app/utils/database.server.ts
++++ b/app/utils/database.server.ts
+@@ -1,7 +1,12 @@
++import "dotenv/config";
+ import { init } from "@paralleldrive/cuid2";
+-import { Prisma, PrismaClient } from "@prisma/client";
++import { PrismaPg } from "@prisma/adapter-pg";
++
++import { Prisma, PrismaClient } from "~/generated/client";
+ 
+ const cuid = init({ length: 8 });
++const connectionString = process.env.DATABASE_URL;
++const adapter = new PrismaPg({ connectionString });
+ 
+ // Define the slug extension first so we can use it to infer the type
+ const slugExtension = Prisma.defineExtension({
+@@ -69,7 +74,7 @@ const trialEndExtension = Prisma.defineExtension({
+ });
+ 
+ // Create a dummy extended client to infer the correct type.
+-const dummyClient = new PrismaClient()
++const dummyClient = new PrismaClient({ adapter })
+   .$extends(slugExtension)
+   .$extends(trialEndExtension);
+ type ExtendedPrismaClient = typeof dummyClient;
+@@ -91,12 +96,12 @@ const reservedSlugs = new Set([
+ // create a new connection to the DB with every change either.
+ // In production we'll have a single connection to the DB.
+ if (process.env.NODE_ENV === "production") {
+-  prisma = new PrismaClient()
++  prisma = new PrismaClient({ adapter })
+     .$extends(slugExtension)
+     .$extends(trialEndExtension);
+ } else {
+   if (!globalThis.__database__) {
+-    globalThis.__database__ = new PrismaClient()
++    globalThis.__database__ = new PrismaClient({ adapter })
+       .$extends(slugExtension)
+       .$extends(trialEndExtension);
+   }
+diff --git a/app/utils/storage-helpers.server.spec.ts b/app/utils/storage-helpers.server.spec.ts
+index d17a596..3986467 100644
+--- a/app/utils/storage-helpers.server.spec.ts
++++ b/app/utils/storage-helpers.server.spec.ts
+@@ -46,13 +46,13 @@ describe("getBucketAndKeyFromUrl()", () => {
+       },
+       url: "https://project-ref.supabase.co/storage/v1/render/image/public/app-images/user-avatars/gfcqufunx7kdf20k54bdhpez/avatar.png?width=128&height=128&resize=cover",
+     },
+-  ])(
+-    "given: a url $url, should: return bucket $expected.bucket and key $expected.key",
+-    ({ url, expected }) => {
+-      const actual = getBucketAndKeyFromUrl(url);
+-      expect(actual).toEqual(expected);
+-    },
+-  );
++  ])("given: a url $url, should: return bucket $expected.bucket and key $expected.key", ({
++    url,
++    expected,
++  }) => {
++    const actual = getBucketAndKeyFromUrl(url);
++    expect(actual).toEqual(expected);
++  });
+ 
+   test('given: an invalid URL string, should: throw error "Invalid URL"', () => {
+     const url = "not a url";
+diff --git a/biome.json b/biome.json
+index cde7fa3..c26dffa 100644
+--- a/biome.json
++++ b/biome.json
+@@ -1,5 +1,5 @@
+ {
+-  "$schema": "https://biomejs.dev/schemas/2.3.5/schema.json",
++  "$schema": "https://biomejs.dev/schemas/2.3.7/schema.json",
+   "assist": {
+     "actions": {
+       "source": {
+diff --git a/package.json b/package.json
+index b19dc24..92cc8e3 100644
+--- a/package.json
++++ b/package.json
+@@ -5,9 +5,9 @@
+     }
+   },
+   "dependencies": {
+-    "@aws-sdk/client-s3": "3.931.0",
+-    "@aws-sdk/lib-storage": "3.931.0",
+-    "@aws-sdk/s3-request-presigner": "3.931.0",
++    "@aws-sdk/client-s3": "3.937.0",
++    "@aws-sdk/lib-storage": "3.937.0",
++    "@aws-sdk/s3-request-presigner": "3.937.0",
+     "@conform-to/react": "1.13.3",
+     "@conform-to/zod": "1.13.3",
+     "@epic-web/client-hints": "1.3.8",
+@@ -16,13 +16,14 @@
+     "@oslojs/crypto": "1.0.1",
+     "@oslojs/encoding": "1.1.0",
+     "@paralleldrive/cuid2": "3.0.4",
+-    "@prisma/client": "6.19.0",
++    "@prisma/adapter-pg": "7.0.0",
++    "@prisma/client": "7.0.0",
+     "@react-email/components": "1.0.1",
+     "@react-router/node": "7.9.6",
+     "@react-router/serve": "7.9.6",
+     "@remix-run/form-data-parser": "0.14.0",
+     "@supabase/ssr": "0.7.0",
+-    "@supabase/supabase-js": "2.81.1",
++    "@supabase/supabase-js": "2.84.0",
+     "@tanstack/react-table": "8.21.3",
+     "canvas-confetti": "1.9.4",
+     "class-variance-authority": "0.7.1",
+@@ -31,32 +32,33 @@
+     "cobe": "0.6.5",
+     "copy-to-clipboard": "3.3.3",
+     "date-fns": "4.1.0",
+-    "i18next": "25.6.2",
++    "dotenv": "17.2.3",
++    "i18next": "25.6.3",
+     "i18next-browser-languagedetector": "8.2.0",
+     "i18next-fetch-backend": "7.0.0",
+     "input-otp": "1.4.2",
+     "isbot": "5.1.32",
+-    "lucide-react": "0.553.0",
++    "lucide-react": "0.554.0",
+     "motion": "12.23.24",
+     "pretty-cache-header": "1.0.0",
+     "radix-ui": "1.4.3",
+     "ramda": "0.32.0",
+     "react": "19.2.0",
+     "react-dom": "19.2.0",
+-    "react-i18next": "16.3.3",
++    "react-i18next": "16.3.5",
+     "react-icons": "5.5.0",
+     "react-router": "7.9.6",
+     "remix-i18next": "7.4.2",
+     "remix-utils": "9.0.0",
+     "sonner": "2.0.7",
+-    "stripe": "19.3.1",
++    "stripe": "20.0.0",
+     "tailwind-merge": "3.4.0",
+     "tw-animate-css": "1.4.0",
+-    "zod": "4.1.12"
++    "zod": "4.1.13"
+   },
+   "devDependencies": {
+     "@axe-core/playwright": "4.11.0",
+-    "@biomejs/biome": "2.3.5",
++    "@biomejs/biome": "2.3.7",
+     "@commitlint/cli": "20.1.0",
+     "@commitlint/config-conventional": "20.0.0",
+     "@faker-js/faker": "10.1.0",
+@@ -71,27 +73,26 @@
+     "@types/canvas-confetti": "1.9.0",
+     "@types/node": "24",
+     "@types/ramda": "0.31.1",
+-    "@types/react": "19.2.4",
++    "@types/react": "19.2.7",
+     "@types/react-dom": "19.2.3",
+-    "@vitest/coverage-v8": "4.0.9",
++    "@vitest/coverage-v8": "4.0.13",
+     "commitizen": "4.3.1",
+     "cross-env": "10.1.0",
+     "cz-conventional-changelog": "3.3.0",
+-    "dotenv": "17.2.3",
+     "happy-dom": "20.0.10",
+     "husky": "9.1.7",
+-    "lint-staged": "16.2.6",
+-    "msw": "2.12.1",
+-    "prisma": "6.19.0",
++    "lint-staged": "16.2.7",
++    "msw": "2.12.3",
++    "prisma": "7.0.0",
+     "react-router-devtools": "6.0.0",
+     "remix-flat-routes": "0.8.5",
+     "tailwindcss": "4.1.17",
+     "tsc-files": "1.1.4",
+     "tsx": "4.20.6",
+     "typescript": "5.9.3",
+-    "vite": "7.2.2",
++    "vite": "7.2.4",
+     "vite-tsconfig-paths": "5.1.4",
+-    "vitest": "4.0.9"
++    "vitest": "4.0.13"
+   },
+   "lint-staged": {
+     "*.{js,jsx,ts,tsx,json,css,md}": [
+@@ -99,7 +100,7 @@
+     ]
+   },
+   "name": "reactsquad-react-router-saas-template",
+-  "packageManager": "npm@11.6.2",
++  "packageManager": "npm@11.6.3",
+   "private": true,
+   "scripts": {
+     "build": "react-router build",
+diff --git a/playwright/e2e/billing/billing.e2e.ts b/playwright/e2e/billing/billing.e2e.ts
+index 25a92d7..343832a 100644
+--- a/playwright/e2e/billing/billing.e2e.ts
++++ b/playwright/e2e/billing/billing.e2e.ts
+@@ -1,11 +1,6 @@
+ /** biome-ignore-all lint/style/noNonNullAssertion: test code */
+ import AxeBuilder from "@axe-core/playwright";
+ import { faker } from "@faker-js/faker";
+-import type { Organization } from "@prisma/client";
+-import {
+-  OrganizationMembershipRole,
+-  StripeSubscriptionStatus,
+-} from "@prisma/client";
+ import { expect, test } from "playwright/test";
+ import {
+   getPath,
+@@ -33,6 +28,11 @@ import {
+   deleteUserAccountFromDatabaseById,
+   saveUserAccountToDatabase,
+ } from "~/features/user-accounts/user-accounts-model.server";
++import type { Organization } from "~/generated/client";
++import {
++  OrganizationMembershipRole,
++  StripeSubscriptionStatus,
++} from "~/generated/client";
+ import { teardownOrganizationAndMember } from "~/test/test-utils";
+ 
+ const createPath = (organizationSlug: Organization["slug"]) =>
+diff --git a/playwright/e2e/billing/stripe-webhook.e2e.ts b/playwright/e2e/billing/stripe-webhook.e2e.ts
+index 7649e75..35f7b5e 100644
+--- a/playwright/e2e/billing/stripe-webhook.e2e.ts
++++ b/playwright/e2e/billing/stripe-webhook.e2e.ts
+@@ -3,7 +3,6 @@ import { faker } from "@faker-js/faker";
+ import { createId } from "@paralleldrive/cuid2";
+ import type { APIRequestContext } from "@playwright/test";
+ import { expect, test } from "@playwright/test";
+-import { StripePriceInterval } from "@prisma/client";
+ import type Stripe from "stripe";
+ 
+ import { getJson } from "../../utils";
+@@ -69,6 +68,7 @@ import {
+   deleteUserAccountFromDatabaseById,
+   saveUserAccountToDatabase,
+ } from "~/features/user-accounts/user-accounts-model.server";
++import { StripePriceInterval } from "~/generated/client";
+ 
+ const path = "/api/v1/stripe/webhooks";
+ 
+diff --git a/playwright/e2e/onboarding/onboarding-organization.e2e.ts b/playwright/e2e/onboarding/onboarding-organization.e2e.ts
+index 275f688..02fb615 100644
+--- a/playwright/e2e/onboarding/onboarding-organization.e2e.ts
++++ b/playwright/e2e/onboarding/onboarding-organization.e2e.ts
+@@ -1,7 +1,6 @@
+ import AxeBuilder from "@axe-core/playwright";
+ import { faker } from "@faker-js/faker";
+ import { expect, test } from "@playwright/test";
+-import { OrganizationMembershipRole } from "@prisma/client";
+ 
+ import {
+   getPath,
+@@ -12,6 +11,7 @@ import { createPopulatedOrganization } from "~/features/organizations/organizati
+ import { retrieveOrganizationWithMembershipsFromDatabaseBySlug } from "~/features/organizations/organizations-model.server";
+ import { createPopulatedUserAccount } from "~/features/user-accounts/user-accounts-factories.server";
+ import { deleteUserAccountFromDatabaseById } from "~/features/user-accounts/user-accounts-model.server";
++import { OrganizationMembershipRole } from "~/generated/client";
+ import { teardownOrganizationAndMember } from "~/test/test-utils";
+ 
+ const path = "/onboarding/organization";
+diff --git a/playwright/e2e/organizations/general-organization-settings.e2e.ts b/playwright/e2e/organizations/general-organization-settings.e2e.ts
+index a5bb439..d52a3d1 100644
+--- a/playwright/e2e/organizations/general-organization-settings.e2e.ts
++++ b/playwright/e2e/organizations/general-organization-settings.e2e.ts
+@@ -1,7 +1,6 @@
+ import AxeBuilder from "@axe-core/playwright";
+ import { faker } from "@faker-js/faker";
+ import { expect, test } from "@playwright/test";
+-import { OrganizationMembershipRole } from "@prisma/client";
+ 
+ import {
+   getPath,
+@@ -12,6 +11,7 @@ import { createPopulatedOrganization } from "~/features/organizations/organizati
+ import { retrieveOrganizationFromDatabaseById } from "~/features/organizations/organizations-model.server";
+ import { createPopulatedUserAccount } from "~/features/user-accounts/user-accounts-factories.server";
+ import { deleteUserAccountFromDatabaseById } from "~/features/user-accounts/user-accounts-model.server";
++import { OrganizationMembershipRole } from "~/generated/client";
+ import {
+   createUserWithOrgAndAddAsMember,
+   teardownOrganizationAndMember,
+diff --git a/playwright/e2e/organizations/new-organization.e2e.ts b/playwright/e2e/organizations/new-organization.e2e.ts
+index add2077..d7ca0bd 100644
+--- a/playwright/e2e/organizations/new-organization.e2e.ts
++++ b/playwright/e2e/organizations/new-organization.e2e.ts
+@@ -2,7 +2,6 @@
+ import AxeBuilder from "@axe-core/playwright";
+ import { faker } from "@faker-js/faker";
+ import { expect, test } from "@playwright/test";
+-import { OrganizationMembershipRole } from "@prisma/client";
+ 
+ import {
+   getPath,
+@@ -16,6 +15,7 @@ import {
+ } from "~/features/organizations/organizations-model.server";
+ import { createPopulatedUserAccount } from "~/features/user-accounts/user-accounts-factories.server";
+ import { deleteUserAccountFromDatabaseById } from "~/features/user-accounts/user-accounts-model.server";
++import { OrganizationMembershipRole } from "~/generated/client";
+ import { teardownOrganizationAndMember } from "~/test/test-utils";
+ 
+ const path = "/organizations/new";
+diff --git a/playwright/e2e/organizations/organizations-email-invite.e2e.ts b/playwright/e2e/organizations/organizations-email-invite.e2e.ts
+index eb212e7..47c5f30 100644
+--- a/playwright/e2e/organizations/organizations-email-invite.e2e.ts
++++ b/playwright/e2e/organizations/organizations-email-invite.e2e.ts
+@@ -1,13 +1,13 @@
+ import AxeBuilder from "@axe-core/playwright";
+ import type { Page } from "@playwright/test";
+ import { expect, test } from "@playwright/test";
+-import type { OrganizationEmailInviteLink } from "@prisma/client";
+ import { promiseHash } from "remix-utils/promise";
+ 
+ import { getPath, setupOrganizationAndLoginAsMember } from "../../utils";
+ import { priceLookupKeysByTierAndInterval } from "~/features/billing/billing-constants";
+ import { saveOrganizationEmailInviteLinkToDatabase } from "~/features/organizations/organizations-email-invite-link-model.server";
+ import { createPopulatedOrganizationEmailInviteLink } from "~/features/organizations/organizations-factories.server";
++import type { OrganizationEmailInviteLink } from "~/generated/client";
+ import {
+   createUserWithOrgAndAddAsMember,
+   teardownOrganizationAndMember,
+diff --git a/playwright/e2e/organizations/organizations-invite-link.e2e.ts b/playwright/e2e/organizations/organizations-invite-link.e2e.ts
+index 3cdf014..67cc496 100644
+--- a/playwright/e2e/organizations/organizations-invite-link.e2e.ts
++++ b/playwright/e2e/organizations/organizations-invite-link.e2e.ts
+@@ -1,13 +1,13 @@
+ import AxeBuilder from "@axe-core/playwright";
+ import type { Page } from "@playwright/test";
+ import { expect, test } from "@playwright/test";
+-import type { OrganizationInviteLink } from "@prisma/client";
+ import { promiseHash } from "remix-utils/promise";
+ 
+ import { getPath, setupOrganizationAndLoginAsMember } from "../../utils";
+ import { priceLookupKeysByTierAndInterval } from "~/features/billing/billing-constants";
+ import { createPopulatedOrganizationInviteLink } from "~/features/organizations/organizations-factories.server";
+ import { saveOrganizationInviteLinkToDatabase } from "~/features/organizations/organizations-invite-link-model.server";
++import type { OrganizationInviteLink } from "~/generated/client";
+ import {
+   createUserWithOrgAndAddAsMember,
+   teardownOrganizationAndMember,
+diff --git a/playwright/e2e/organizations/organizations-list.e2e.ts b/playwright/e2e/organizations/organizations-list.e2e.ts
+index b9909ea..dea59e8 100644
+--- a/playwright/e2e/organizations/organizations-list.e2e.ts
++++ b/playwright/e2e/organizations/organizations-list.e2e.ts
+@@ -1,6 +1,5 @@
+ import AxeBuilder from "@axe-core/playwright";
+ import { expect, test } from "@playwright/test";
+-import { OrganizationMembershipRole } from "@prisma/client";
+ 
+ import {
+   getPath,
+@@ -15,6 +14,7 @@ import {
+ } from "~/features/organizations/organizations-model.server";
+ import { createPopulatedUserAccount } from "~/features/user-accounts/user-accounts-factories.server";
+ import { deleteUserAccountFromDatabaseById } from "~/features/user-accounts/user-accounts-model.server";
++import { OrganizationMembershipRole } from "~/generated/client";
+ import { teardownOrganizationAndMember } from "~/test/test-utils";
+ 
+ const path = "/organizations";
+diff --git a/playwright/e2e/organizations/organizations-settings-layout.e2e.ts b/playwright/e2e/organizations/organizations-settings-layout.e2e.ts
+index 670104c..7c5dac9 100644
+--- a/playwright/e2e/organizations/organizations-settings-layout.e2e.ts
++++ b/playwright/e2e/organizations/organizations-settings-layout.e2e.ts
+@@ -2,7 +2,6 @@
+ import AxeBuilder from "@axe-core/playwright";
+ import { faker } from "@faker-js/faker";
+ import { expect, test } from "@playwright/test";
+-import { OrganizationMembershipRole } from "@prisma/client";
+ 
+ import {
+   getPath,
+@@ -17,6 +16,7 @@ import {
+ } from "~/features/organizations/organizations-model.server";
+ import { createPopulatedUserAccount } from "~/features/user-accounts/user-accounts-factories.server";
+ import { deleteUserAccountFromDatabaseById } from "~/features/user-accounts/user-accounts-model.server";
++import { OrganizationMembershipRole } from "~/generated/client";
+ import {
+   createTestSubscriptionForUserAndOrganization,
+   teardownOrganizationAndMember,
+diff --git a/playwright/e2e/organizations/team-member-organization-settings.e2e.ts b/playwright/e2e/organizations/team-member-organization-settings.e2e.ts
+index c7ca6be..c12c5b7 100644
+--- a/playwright/e2e/organizations/team-member-organization-settings.e2e.ts
++++ b/playwright/e2e/organizations/team-member-organization-settings.e2e.ts
+@@ -3,12 +3,6 @@ import AxeBuilder from "@axe-core/playwright";
+ import { faker } from "@faker-js/faker";
+ import type { Page } from "@playwright/test";
+ import { expect, test } from "@playwright/test";
+-import type {
+-  Organization,
+-  OrganizationInviteLink,
+-  UserAccount,
+-} from "@prisma/client";
+-import { OrganizationMembershipRole } from "@prisma/client";
+ 
+ import {
+   getPath,
+@@ -39,6 +33,12 @@ import {
+   deleteUserAccountFromDatabaseById,
+   saveUserAccountToDatabase,
+ } from "~/features/user-accounts/user-accounts-model.server";
++import type {
++  Organization,
++  OrganizationInviteLink,
++  UserAccount,
++} from "~/generated/client";
++import { OrganizationMembershipRole } from "~/generated/client";
+ import { teardownOrganizationAndMember } from "~/test/test-utils";
+ import { asyncForEach } from "~/utils/async-for-each.server";
+ 
+diff --git a/playwright/e2e/settings/account.e2e.ts b/playwright/e2e/settings/account.e2e.ts
+index 5b98b2c..d9bf692 100644
+--- a/playwright/e2e/settings/account.e2e.ts
++++ b/playwright/e2e/settings/account.e2e.ts
+@@ -8,7 +8,6 @@
+ 
+ import AxeBuilder from "@axe-core/playwright";
+ import { expect, test } from "@playwright/test";
+-import { OrganizationMembershipRole } from "@prisma/client";
+ 
+ import {
+   getPath,
+@@ -26,6 +25,7 @@ import {
+   retrieveUserAccountFromDatabaseById,
+   saveUserAccountToDatabase,
+ } from "~/features/user-accounts/user-accounts-model.server";
++import { OrganizationMembershipRole } from "~/generated/client";
+ import {
+   createUserWithOrgAndAddAsMember,
+   teardownOrganizationAndMember,
+diff --git a/playwright/utils.ts b/playwright/utils.ts
+index 0bcdd97..712b53e 100644
+--- a/playwright/utils.ts
++++ b/playwright/utils.ts
+@@ -1,8 +1,6 @@
+ import { faker } from "@faker-js/faker";
+ import type { APIResponse, Page } from "@playwright/test";
+ import { request } from "@playwright/test";
+-import type { Organization, UserAccount } from "@prisma/client";
+-import { OrganizationMembershipRole } from "@prisma/client";
+ import dotenv from "dotenv";
+ import { promiseHash } from "remix-utils/promise";
+ 
+@@ -22,6 +20,8 @@ import {
+ } from "~/features/organizations/organizations-model.server";
+ import { createPopulatedUserAccount } from "~/features/user-accounts/user-accounts-factories.server";
+ import { saveUserAccountToDatabase } from "~/features/user-accounts/user-accounts-model.server";
++import type { Organization, UserAccount } from "~/generated/client";
++import { OrganizationMembershipRole } from "~/generated/client";
+ import { setMockSession } from "~/test/mocks/handlers/supabase/mock-sessions";
+ import {
+   createMockSupabaseSession,
+diff --git a/prisma.config.ts b/prisma.config.ts
+new file mode 100644
+index 0000000..6d73338
+--- /dev/null
++++ b/prisma.config.ts
+@@ -0,0 +1,13 @@
++import "dotenv/config";
++import { defineConfig, env } from "prisma/config";
++
++export default defineConfig({
++  datasource: {
++    url: env("DATABASE_URL"),
++  },
++  migrations: {
++    path: "prisma/migrations",
++    seed: "tsx prisma/seed.ts",
++  },
++  schema: "prisma/schema.prisma",
++});
+diff --git a/prisma/schema.prisma b/prisma/schema.prisma
+index 494268c..7feb0fb 100644
+--- a/prisma/schema.prisma
++++ b/prisma/schema.prisma
+@@ -1,11 +1,10 @@
+ generator client {
+-  provider = "prisma-client-js"
+-  output   = "../node_modules/.prisma/client"
++  provider = "prisma-client"
++  output   = "../app/generated"
+ }
+ 
+ datasource db {
+   provider = "postgresql"
+-  url      = env("DATABASE_URL")
+ }
+ 
+ model UserAccount {
+diff --git a/prisma/seed.ts b/prisma/seed.ts
+index f4e7561..c8ccccf 100644
+--- a/prisma/seed.ts
++++ b/prisma/seed.ts
+@@ -1,4 +1,3 @@
+-import { OrganizationMembershipRole } from "@prisma/client";
+ import { config } from "dotenv";
+ 
+ import { priceLookupKeysByTierAndInterval } from "../app/features/billing/billing-constants";
+@@ -11,6 +10,7 @@ import {
+   ensureStripeProductsAndPricesExist,
+ } from "../app/test/test-utils";
+ import { prisma } from "../app/utils/database.server";
++import { OrganizationMembershipRole } from "~/generated/client";
+ 
+ // Load environment variables from .env file
+ config();
+diff --git a/vite.config.ts b/vite.config.ts
+index 175196e..711d188 100644
+--- a/vite.config.ts
++++ b/vite.config.ts
+@@ -47,12 +47,6 @@ const rootConfig = defineConfig({
+     staticCacheHeaders(),
+     sudoFilesPlugin,
+   ],
+-  resolve: {
+-    alias: {
+-      ".prisma/client/index-browser":
+-        "./node_modules/.prisma/client/index-browser.js",
+-    },
+-  },
+   server: { port: 3000 },
+ });
+ 
