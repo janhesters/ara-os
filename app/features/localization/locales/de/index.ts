@@ -6,6 +6,7 @@ import notifications from "./notifications";
 import onboarding from "./onboarding";
 import organizations from "./organizations";
 import settings from "./settings";
+import stealthMode from "./stealth-mode";
 import translation from "./translation";
 import userAuthentication from "./user-authentication";
 
@@ -18,6 +19,7 @@ export default {
   onboarding,
   organizations,
   settings,
+  stealthMode,
   translation,
   userAuthentication,
 } satisfies typeof import("../en/index").default;

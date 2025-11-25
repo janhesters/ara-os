@@ -9,6 +9,7 @@ const schema = z.object({
   MOCKS: z.literal("true").optional(),
   NODE_ENV: z.enum(["production", "development", "test"] as const),
   RESEND_API_KEY: z.string().optional(),
+  STEALTH_MODE: z.enum(["true", "false"]).optional(),
   STORAGE_ACCESS_KEY_ID: z.string(),
   STORAGE_REGION: z.string(),
   STORAGE_SECRET_ACCESS_KEY: z.string(),
