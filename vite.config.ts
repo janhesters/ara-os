@@ -1,6 +1,6 @@
 import { reactRouter } from "@react-router/dev/vite";
 import tailwindcss from "@tailwindcss/vite";
-import type { Plugin } from "vite";
+import type { Plugin, UserConfig } from "vite";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { defineConfig as defineVitestConfig } from "vitest/config";
@@ -39,7 +39,7 @@ function staticCacheHeaders(): Plugin {
   };
 }
 
-const rootConfig = defineConfig({
+const sharedConfig: UserConfig = {
   plugins: [
     tailwindcss(),
     !process.env.VITEST && reactRouter(),
@@ -48,17 +48,17 @@ const rootConfig = defineConfig({
     sudoFilesPlugin,
   ],
   server: { port: 3000 },
-});
+};
 
 const testConfig = defineVitestConfig({
   test: {
     projects: [
       {
-        ...rootConfig,
+        ...sharedConfig,
         test: { include: ["app/**/*.test.ts"], name: "unit-tests" },
       },
       {
-        ...rootConfig,
+        ...sharedConfig,
         test: {
           globalSetup: "app/test/vitest.global-setup.ts",
           include: ["app/**/*.spec.ts"],
@@ -67,7 +67,7 @@ const testConfig = defineVitestConfig({
         },
       },
       {
-        ...rootConfig,
+        ...sharedConfig,
         test: {
           environment: "happy-dom",
           include: ["app/**/*.test.tsx"],
@@ -79,4 +79,13 @@ const testConfig = defineVitestConfig({
   },
 });
 
-export default defineConfig({ ...rootConfig, ...testConfig });
+export default defineConfig(({ command }) => ({
+  ...sharedConfig,
+  ...testConfig,
+  // TODO: Remove this workaround once React includes renderToPipeableStream in
+  // the Bun entrypoint. See: https://github.com/facebook/react/pull/34193
+  resolve:
+    command === "build"
+      ? { alias: { "react-dom/server": "react-dom/server.node" } }
+      : undefined,
+}));

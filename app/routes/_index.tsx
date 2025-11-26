@@ -120,7 +120,7 @@ function HeaderComponent() {
               rel="noopener noreferrer"
               target="_blank"
             >
-              <XLogoIcon className="size-4" />
+              <XLogoIcon />
               {t("follow")}
             </a>
           </Button>
@@ -185,20 +185,20 @@ function HeroSectionComponent() {
           <div className="fade-in slide-in-from-bottom-10 flex animate-in flex-row flex-wrap items-center justify-center gap-3 fill-mode-backwards pt-2 delay-300 duration-500 ease-out">
             <Button
               asChild
-              className="rounded-full border bg-card active:scale-98"
+              className="rounded-full"
               size="lg"
-              variant="ghost"
+              variant="outline"
             >
               <a
                 href="https://x.com/araos_official"
                 rel="noopener noreferrer"
                 target="_blank"
               >
-                <XLogoIcon className="size-4" />
+                <XLogoIcon />
                 {t("follow")}
               </a>
             </Button>
-            <Button asChild className="rounded-full active:scale-98" size="lg">
+            <Button asChild className="rounded-full" size="lg">
               <Link to="/contact-us">{t("contactUs")}</Link>
             </Button>
           </div>
