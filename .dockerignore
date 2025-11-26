@@ -1,4 +1,35 @@
-.react-router
-build
+# Dependencies
 node_modules
+
+# Build output (we rebuild in Docker)
+build
+.react-router
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+.cursor
+
+# Testing
+test-results
+playwright-report
+coverage
+
+# Documentation
 README.md
+CONTRIBUTING.md
+LICENSE
+decisions
+
+# Development files
+*.log
+.env
+.env.*
+!.env.example
+
+# Playwright
+playwright

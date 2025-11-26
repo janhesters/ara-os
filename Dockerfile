@@ -1,22 +1,39 @@
-FROM node:20-alpine AS development-dependencies-env
-COPY . /app
-WORKDIR /app
-RUN npm ci
+# syntax=docker/dockerfile:1
 
-FROM node:20-alpine AS production-dependencies-env
-COPY ./package.json package-lock.json /app/
+# Base stage with Bun (Debian-based for OpenSSL support)
+FROM oven/bun:1-debian AS base
 WORKDIR /app
-RUN npm ci --omit=dev
 
-FROM node:20-alpine AS build-env
-COPY . /app/
-COPY --from=development-dependencies-env /app/node_modules /app/node_modules
-WORKDIR /app
-RUN npm run build
+# Install dependencies into a temp directory for better caching
+FROM base AS deps
+COPY package.json bun.lock ./
+COPY prisma ./prisma/
+COPY prisma.config.ts ./
+RUN bun install --frozen-lockfile
 
-FROM node:20-alpine
-COPY ./package.json package-lock.json /app/
-COPY --from=production-dependencies-env /app/node_modules /app/node_modules
-COPY --from=build-env /app/build /app/build
+# Build stage
+FROM base AS build
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+ENV NODE_ENV=production
+RUN bun run build
+
+# Production stage
+FROM base AS production
 WORKDIR /app
-CMD ["npm", "run", "start"]
+
+# Copy production dependencies and built assets
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=build /app/build ./build
+COPY --from=build /app/app/generated ./app/generated
+COPY --from=build /app/public ./public
+COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/prisma.config.ts ./
+COPY package.json ./
+
+ENV NODE_ENV=production
+ENV PORT=3000
+EXPOSE 3000
+
+USER bun
+CMD ["bun", "run", "start"]
